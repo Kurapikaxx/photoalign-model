@@ -1,0 +1,40 @@
+{
+  "model_file": "dental_classifier.onnx",
+  "class_names": [
+    "eo_front",
+    "eo_front_smile",
+    "eo_profile",
+    "eo_profile_smile",
+    "io_frontal",
+    "io_left",
+    "io_lower",
+    "io_right",
+    "io_upper"
+  ],
+  "input_shape": [
+    1,
+    3,
+    224,
+    224
+  ],
+  "img_size": 224,
+  "preprocessing": {
+    "resize": [
+      224,
+      224
+    ],
+    "normalize_mean": [
+      0.485,
+      0.456,
+      0.406
+    ],
+    "normalize_std": [
+      0.229,
+      0.224,
+      0.225
+    ],
+    "channel_order": "RGB"
+  },
+  "version": "1.0",
+  "val_accuracy": 1.0
+}
