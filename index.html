@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PhotoAlign Collage</title>
+<meta name="description" content="Sorts, crops and lays out a patient's 9 clinical photos.">
+<meta name="theme-color" content="#1f4fbf">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a slim toolbar over the live collage board; the board IS the slide preview. Crop editor opens as a full-screen sheet. */
+:root{
+  --bg:#eef0f3; --panel:#ffffff; --ink:#1b2230; --muted:#5d6676; --line:#d6dae2;
+  --accent:#1f4fbf; --accent-ink:#ffffff; --accent-soft:#e3eafb;
+  --ok:#1e7a4c; --warn:#a86200; --bad:#b3261e; --well:#dfe3ea;
+  --font-ui:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12151b; --panel:#1b2029; --ink:#e7eaf0; --muted:#9aa3b2; --line:#2d3441;
+  --accent:#86a6ff; --accent-ink:#0d1324; --accent-soft:#222c45;
+  --ok:#5fcf95; --warn:#f0b35a; --bad:#ff8a80; --well:#0d1015; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12151b; --panel:#1b2029; --ink:#e7eaf0; --muted:#9aa3b2; --line:#2d3441;
+  --accent:#86a6ff; --accent-ink:#0d1324; --accent-soft:#222c45;
+  --ok:#5fcf95; --warn:#f0b35a; --bad:#ff8a80; --well:#0d1015; color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%}
+html,body{height:100%}
+body{margin:0;font-size:14px}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.45}
+.wrap{max-width:1280px;margin:0 auto;padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 20px;justify-content:space-between}
+.brand h1{font-size:20px;font-weight:700;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.status{font-family:var(--font-mono);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.busy{background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.3}}
+@media (prefers-reduced-motion:reduce){.dot.busy{animation:none}}
+.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+input[type=text],input[type=date],select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0}
+#patient{width:220px;max-width:100%}
+.spacer{flex:1 1 auto}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+button:hover{border-color:var(--accent)}
+button:focus-visible,input:focus-visible,select:focus-visible,.slot:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.board-wrap{background:var(--well);border-radius:var(--r);padding:14px;position:relative;overflow-x:auto}
+.board{position:relative;margin:0 auto;aspect-ratio:16/9;width:min(100%,calc((100vh - 300px)*16/9));min-width:min(100%,560px);max-width:100%;background:#000;transition:background .2s}
+.slot{position:absolute;background:rgba(255,255,255,.06);outline:1px dashed rgba(255,255,255,.28);outline-offset:-1px;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.board.light .slot{background:rgba(0,0,0,.05);outline-color:rgba(0,0,0,.25)}
+.slot canvas{position:absolute;inset:0;width:100%;height:100%}
+.slot .ph{color:rgba(255,255,255,.6);font-size:clamp(9px,1.1vw,13px);text-align:center;padding:4px;pointer-events:none}
+.board.light .slot .ph{color:rgba(0,0,0,.55)}
+.slot.filled{outline:none}
+.slot.drop{outline:2px solid var(--accent)!important;outline-offset:-2px}
+.chip{position:absolute;left:4px;top:4px;font-family:var(--font-mono);font-size:10px;line-height:1;padding:3px 5px;border-radius:4px;background:rgba(0,0,0,.65);color:#fff;pointer-events:none;display:flex;gap:4px;align-items:center}
+.chip i{width:6px;height:6px;border-radius:50%;display:inline-block}
+.board-head{position:absolute;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.board.light .board-head{color:#111}
+.drop-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.dropzone{border:2px dashed var(--line);border-radius:var(--r);padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--panel)}
+.dropzone.over{border-color:var(--accent);background:var(--accent-soft)}
+.dropzone .msg{color:var(--muted);flex:1 1 240px;min-width:0}
+.tray{display:flex;gap:8px;flex-wrap:wrap}
+.tray .ti{width:84px;height:64px;border-radius:6px;overflow:hidden;position:relative;border:1px solid var(--line);cursor:grab;background:#000}
+.tray .ti canvas{width:100%;height:100%;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:8px;font-size:13px;max-width:min(560px,calc(100vw - 32px));z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+/* editor */
+.editor[hidden],.toast[hidden]{display:none}
+.editor{position:fixed;inset:0;z-index:40;background:var(--bg);display:grid;grid-template-rows:auto 1fr auto;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.ed-top,.ed-bot{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:var(--panel);border-bottom:1px solid var(--line)}
+.ed-bot{border-bottom:0;border-top:1px solid var(--line)}
+.ed-top h2{margin:0;font-size:16px;font-weight:700}
+.ed-top .sub{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.ed-stage{position:relative;min-height:0;background:#0a0b0e;touch-action:none}
+.ed-stage canvas{position:absolute;inset:0;width:100%;height:100%;cursor:move}
+.angle{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.angle input{width:160px}
+.hint{font-size:12px;color:var(--muted)}
+@media (max-width:640px){#patient{width:100%}.angle input{width:110px}}
+.folder{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);min-width:0}
+.folder b{font-weight:600}
+.folder .path{font-family:var(--font-mono);font-size:12px;color:var(--muted);overflow-wrap:anywhere;min-width:0}
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);padding:20px;max-width:min(460px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h3{margin:0 0 8px;font-size:16px}
+dialog ul{margin:8px 0 16px;padding-left:18px;font-family:var(--font-mono);font-size:12px;max-height:40vh;overflow:auto}
+dialog .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>PhotoAlign Collage</h1>
+      <p>Open a patient's folder. The photos get sorted, cropped and laid out, then saved back as Front, Front-Smile … Lower.</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div class="status" id="status"><span class="dot busy" id="statusDot"></span><span id="statusText">Loading classifier…</span></div><button type="button" id="installBtn" hidden>Install app</button></div>
+  </header>
+
+  <div class="bar">
+    <div class="field"><label for="patient">Patient</label><input type="text" id="patient" placeholder="Name or file number" autocomplete="off"></div>
+    <div class="field"><label for="date">Date</label><input type="date" id="date"></div>
+    <div class="field"><label for="bgSel">Background</label>
+      <select id="bgSel"><option value="000000">Black</option><option value="1c1c1c">Charcoal</option><option value="ffffff">White</option></select></div>
+    <div class="field"><label for="gapSel">Spacing</label>
+      <select id="gapSel"><option value="0.06">Tight</option><option value="0.12" selected>Normal</option><option value="0.2">Wide</option></select></div>
+    <div class="field"><label for="headSel">Name on slide</label>
+      <select id="headSel"><option value="1">Show</option><option value="0">Hide</option></select></div>
+    <div class="spacer"></div>
+    <button id="clearBtn" type="button">Clear</button>
+    <button id="photosBtn" type="button" class="primary" disabled>Save 9 photos</button>
+    <button id="jpgBtn" type="button" disabled>Save JPG</button>
+    <button id="pptxBtn" type="button" disabled>Save PowerPoint</button>
+  </div>
+
+  <div class="dropzone" id="dropzone">
+    <button type="button" class="primary" id="folderBtn">Open patient folder</button>
+    <button type="button" id="addBtn">Add photos</button>
+    <input type="file" id="fileIn" accept="image/*" multiple hidden>
+    <div class="msg" id="dzMsg">Or drop a patient folder or photos anywhere on this page. Click a slot to fix its crop; drag one slot onto another to swap.</div>
+    <div class="folder" id="folderBox" hidden>
+      <span>Saving to <b id="folderName"></b></span>
+      <select id="folderSub" aria-label="Records folder" hidden></select>
+      <span class="path" id="folderInfo"></span>
+      <button type="button" id="folderClose">Close folder</button>
+    </div>
+    <div class="tray" id="tray"></div>
+  </div>
+
+  <div class="board-wrap"><div class="board" id="board"></div></div>
+
+  <div class="legend">
+    <span><i style="background:var(--ok)"></i>Confident match</span>
+    <span><i style="background:var(--warn)"></i>Check this one</span>
+    <span><i style="background:var(--muted)"></i>Placed by you or by file name</span>
+  </div>
+</div>
+
+<div class="editor" id="editor" hidden>
+  <div class="ed-top">
+    <button type="button" id="edPrev" aria-label="Previous slot">←</button>
+    <div><h2 id="edTitle">Slot</h2><div class="sub" id="edSub"></div></div>
+    <button type="button" id="edNext" aria-label="Next slot">→</button>
+    <div class="spacer"></div>
+    <div class="field"><label for="edSlot">This photo is</label><select id="edSlot"></select></div>
+    <button type="button" class="primary" id="edDone">Done</button>
+  </div>
+  <div class="ed-stage" id="edStage"><canvas id="edCanvas"></canvas></div>
+  <div class="ed-bot">
+    <button type="button" id="edRot">Rotate 90°</button>
+    <button type="button" id="edFlipH">Flip ↔</button>
+    <button type="button" id="edFlipV">Flip ↕</button>
+    <div class="angle"><label for="edAngle">Level</label><input type="range" id="edAngle" min="-15" max="15" step="0.1" value="0"><span id="edAngleVal">0.0°</span></div>
+    <button type="button" id="edAuto">Auto-crop again</button>
+    <div class="spacer"></div>
+    <span class="hint" id="edHint">Drag to move · corners to resize · scroll to zoom · arrow keys nudge · Enter for next</span>
+  </div>
+</div>
+
+<dialog id="confirmDlg">
+  <h3 id="cfTitle">Replace files?</h3>
+  <div id="cfText"></div>
+  <ul id="cfList"></ul>
+  <div class="row"><button type="button" id="cfNo">Cancel</button><button type="button" class="primary" id="cfYes">Replace</button></div>
+</dialog>
+<div class="toast" id="toast" hidden></div>
+
+<script src="vendor/ort.min.js"></script>
+<script src="vendor/pptxgen.bundle.js"></script>
+<script>
+"use strict";
+/* ============ CONFIG (tune here) ============ */
+const CLASSES = ["eo_front","eo_front_smile","eo_profile","eo_profile_smile","io_frontal","io_left","io_lower","io_right","io_upper"];
+const SLOTS = {
+  eo_front:         {label:"Frontal",          group:"Extra-oral", aspect:3/4, kind:"eo"},
+  eo_front_smile:   {label:"Frontal smile",    group:"Extra-oral", aspect:3/4, kind:"eo"},
+  eo_profile:       {label:"Profile",          group:"Extra-oral", aspect:3/4, kind:"eo"},
+  eo_profile_smile: {label:"Profile smile",    group:"Extra-oral", aspect:3/4, kind:"eo"},
+  io_right:         {label:"Right buccal",     group:"Intra-oral", aspect:4/3, kind:"buccal"},
+  io_frontal:       {label:"Frontal",          group:"Intra-oral", aspect:4/3, kind:"frontal"},
+  io_left:          {label:"Left buccal",      group:"Intra-oral", aspect:4/3, kind:"buccal"},
+  io_upper:         {label:"Upper occlusal",   group:"Intra-oral", aspect:4/3, kind:"occlusal"},
+  io_lower:         {label:"Lower occlusal",   group:"Intra-oral", aspect:4/3, kind:"occlusal"},
+};
+// Slide layout: columns of rows of slot ids. Sized automatically to fill a 16:9 slide.
+const LAYOUT = [
+  [["eo_front","eo_front_smile"],["eo_profile","eo_profile_smile"]],
+  [["io_right","io_frontal","io_left"],["io_upper","io_lower"]],
+];
+const SLOT_ORDER = LAYOUT.flat(2);
+// Auto-crop margins, as a fraction of the detected teeth box (intra-oral) — tuned from examples later.
+// Intra-oral crop rules, fitted to the practice's own crops (all 4:3)
+const CROP = {
+  frontal:  {widthScale:1.70, shiftY:0.02},   // centred on the teeth; width = detected incisor–canine span × widthScale
+  buccal:   {widthScale:1.30, posteriorPad:0.02}, // back edge at the last molar; the extra width goes in front of the incisors
+  occlusal: {widthScale:1.35, incisalPad:0.14},   // centred on the arch; incisal edge sits incisalPad × crop height from the crop edge
+  eo:       {faceScale:1.70, faceY:0.50, minFill:0.6},
+};
+// The practice's usual framing per view (centre and width as fractions of the photo, after orientation),
+// measured from its own crops. Detection then moves the crop toward the teeth by BLEND.
+let FRAMING = {   // tuned on 185 of the practice's cases (stage 2)
+  io_frontal:{cx:0.4983,cy:0.5001,w:0.4836},
+  io_left:{cx:0.5611,cy:0.4815,w:0.4542},
+  io_right:{cx:0.4747,cy:0.5382,w:0.4817},
+  io_lower:{cx:0.5166,cy:0.4365,w:0.5289},
+  io_upper:{cx:0.4993,cy:0.5094,w:0.5887},
+  eo_front:{cx:0.4937,cy:0.5179,w:0.3994},
+  eo_front_smile:{cx:0.4948,cy:0.5211,w:0.4027},
+  eo_profile:{cx:0.398,cy:0.5071,w:0.4322},
+  eo_profile_smile:{cx:0.3699,cy:0.5161,w:0.4236},
+};
+// Rotation the practice usually applies (degrees), for views that aren't auto-levelled
+const DEFAULT_ANGLE = {io_right:-3.5,io_lower:8.3,io_upper:1.0};
+// Portrait-shot intra-orals are turned landscape this way (seen consistently in the practice's cases)
+const PORTRAIT_ORIENT = {io_frontal:{rot:1}, io_right:{rot:1}, io_left:{rot:3}, io_upper:{rot:1,flipV:true}};
+// How far detection may move the crop away from the usual framing (0 = framing only, 1 = detection only), per view type
+let BLEND = {pos:0.7, size:0.6, byKind:{frontal:{pos:0.9,size:0.5},buccal:{pos:1.0,size:0.2},occlusal:{pos:0.7,size:0.3},eo:{pos:0.2,size:0.2}}};
+let LEVEL_KINDS = [];   // tuning found your usual fixed angles beat automatic levelling
+const TEETH = {hueMin:17, hueMax:50, vRel:{frontal:0.78,buccal:0.78,occlusal:0.5}, vMin:0.42, maxLevel:18, keep:0.5, keepOcc:0.15, occSingle:true, dilate:{frontal:4,buccal:2,occlusal:5}};  // tuned on 185 cases
+const DEFAULT_ORIENT = {io_upper:{flipH:true}, io_lower:{flipV:true}};  // mirror shots, as the practice orients them
+const SLIDE = {w:13.333, h:7.5, margin:0.3, head:0.45};
+const SKIP_COST = 14;       // cost of leaving a photo out; high so empty slots always get filled
+const CONFIDENT = 0.85;
+const MAX_SIDE = 3200;      // photos are downscaled to this on load
+
+/* ============ STATE ============ */
+const photos = new Map();   // id -> photo
+const slotMap = Object.fromEntries(SLOT_ORDER.map(s=>[s,null]));
+let nextId = 1, session = null, modelState = "loading";
+const $ = id => document.getElementById(id);
+const board = $("board");
+
+const store = {
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+let slotPrefs = store.get("pa.slotPrefs",{});
+let uiPrefs = store.get("pa.ui",{});
+if(uiPrefs.bg) $("bgSel").value=uiPrefs.bg;
+if(uiPrefs.gap) $("gapSel").value=uiPrefs.gap;
+if(uiPrefs.head) $("headSel").value=uiPrefs.head;
+$("date").value = new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
+
+function toast(msg,ms=3200){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,ms)}
+function setStatus(kind,text){$("statusDot").className="dot "+kind;$("statusText").textContent=text}
+
+/* ============ MODEL ============ */
+async function loadModel(){
+  if(typeof ort==="undefined"){modelState="off";setStatus("warn","Classifier didn't load. Sorting by file name; drag to fix.");return}
+  ort.env.wasm.wasmPaths = new URL("vendor/",location.href).href; ort.env.wasm.numThreads = 1; ort.env.wasm.proxy=false;
+  let bytes=null;
+  try{ const r=await fetch("model/dental_classifier.onnx"); if(!r.ok) throw new Error(r.status); bytes=new Uint8Array(await r.arrayBuffer()) }
+  catch(e){ console.warn("model fetch failed",e) }
+  for(const ep of (bytes?["wasm","webgl"]:[])){
+    try{ session = await ort.InferenceSession.create(bytes,{executionProviders:[ep]}); modelState="ready";
+      setStatus("ok","Classifier ready"); break }catch(e){ console.warn("EP failed",ep,e) }
+  }
+  if(!session){modelState="off";setStatus("warn","Classifier unavailable here. Sorting by file name; drag to fix.")}
+  for(const p of photos.values()) if(!p.probs) await classify(p);
+  autoAssign();
+}
+
+async function runModel(canvas){
+  const c=document.createElement("canvas");c.width=224;c.height=224;
+  const x=c.getContext("2d",{willReadFrequently:true});x.drawImage(canvas,0,0,224,224);
+  const d=x.getImageData(0,0,224,224).data, n=224*224, f=new Float32Array(3*n);
+  const m=[0.485,0.456,0.406], s=[0.229,0.224,0.225];
+  for(let i=0;i<n;i++){for(let k=0;k<3;k++) f[k*n+i]=(d[i*4+k]/255-m[k])/s[k]}
+  const out=await session.run({[session.inputNames[0]]:new ort.Tensor("float32",f,[1,3,224,224])});
+  const lg=Array.from(out[session.outputNames[0]].data), mx=Math.max(...lg);
+  const e=lg.map(v=>Math.exp(v-mx)), sum=e.reduce((a,b)=>a+b,0);
+  return Object.fromEntries(CLASSES.map((c,i)=>[c,e[i]/sum]));
+}
+function viewCanvas(p,crop){
+  const src=oriented(p,displayScale(p)), k=displayScale(p), c=document.createElement("canvas");
+  c.width=224;c.height=224; c.getContext("2d").drawImage(src,(crop.cx-crop.w/2)*k,(crop.cy-crop.h/2)*k,crop.w*k,crop.h*k,0,0,224,224); return c;
+}
+// The model was trained on cropped photos, so judge each photo by how it would look cropped:
+// several candidate crops are scored and each class keeps its best view.
+async function classify(p){
+  if(!session) return;
+  try{
+    const an=analysis(p), {W,H}=frameSize(p);
+    const views=[{cx:W/2,cy:H/2,w:W,h:H},{cx:W/2,cy:H/2,w:W*.7,h:H*.7},{cx:W/2,cy:H/2,w:W*.5,h:H*.5},
+      cropFor(p,"eo",3/4,an), cropFor(p,"buccal",4/3,an), cropFor(p,"frontal",4/3,an), cropFor(p,"occlusal",4/3,an)];
+    const best=Object.fromEntries(CLASSES.map(c=>[c,0]));
+    for(const v of views){ const pr=await runModel(viewCanvas(p,v)); for(const c of CLASSES) best[c]=Math.max(best[c],pr[c]) }
+    p.probs=best;
+    p.palate=palateScore(p);
+  }catch(err){console.warn(err)}
+}
+// Upper vs lower: the model reads raw mirror shots by orientation only, so decide by content instead.
+function resolveOcclusals(){
+  for(const p of photos.values()) p.eff=p.probs;
+  const occ=[...photos.values()].filter(p=>p.probs&&Math.max(p.probs.io_upper,p.probs.io_lower)>=0.5)
+    .sort((a,b)=>Math.max(b.probs.io_upper,b.probs.io_lower)-Math.max(a.probs.io_upper,a.probs.io_lower));
+  if(occ.length<2) return;
+  const [a,b]=occ, [up,lo]=a.palate>=b.palate?[a,b]:[b,a];
+  const adj=(p,isUp)=>{const t=Math.max(p.probs.io_upper,p.probs.io_lower), e={...p.probs};
+    e.io_upper=isUp?t:0.02; e.io_lower=isUp?0.02:t; p.eff=e};
+  adj(up,true); adj(lo,false);
+}
+
+/* Filename fallback (only when no model) */
+function guessFromName(name){
+  const t=name.toLowerCase().replace(/[^a-z0-9]+/g," ");
+  const has=w=>new RegExp("\\b"+w).test(t);
+  const smile=has("smil"), prof=has("prof")||has("lat");
+  if(has("upper")||has("max")) return "io_upper";
+  if(has("lower")||has("mand")) return "io_lower";
+  if(has("right")||/\brt\b/.test(t)) return "io_right";
+  if(has("left")||/\blt\b/.test(t)) return "io_left";
+  if(prof) return smile?"eo_profile_smile":"eo_profile";
+  if(has("intra")||has("io ")) return "io_frontal";
+  if(smile) return "eo_front_smile";
+  if(has("face")||has("front")) return "eo_front";
+  return null;
+}
+
+/* Exact best assignment: DP over slot bitmask. Locked photos keep their slots. */
+function autoAssign(){
+  const locked=new Set(), free=[];
+  SLOT_ORDER.forEach((s,i)=>{const id=slotMap[s];const p=id&&photos.get(id);if(p&&p.locked)locked.add(i)});
+  const cands=[...photos.values()].filter(p=>!p.locked);
+  for(const s of SLOT_ORDER){const p=photos.get(slotMap[s]);if(p&&!p.locked)slotMap[s]=null}
+  resolveOcclusals();
+  const S=SLOT_ORDER.length, FULL=1<<S;
+  const cost=(p,si)=>{
+    if(locked.has(si)) return Infinity;
+    if(p.eff) return -Math.log(p.eff[SLOT_ORDER[si]]+1e-6);
+    const g=guessFromName(p.name); return g===SLOT_ORDER[si]?0.5:3;
+  };
+  let dp=new Float64Array(FULL).fill(Infinity); dp[0]=0; const par=[];
+  for(const p of cands){
+    const nd=new Float64Array(FULL).fill(Infinity), pr=new Int16Array(FULL).fill(-2);
+    for(let m=0;m<FULL;m++){ if(dp[m]===Infinity) continue;
+      if(dp[m]+SKIP_COST<nd[m]){nd[m]=dp[m]+SKIP_COST;pr[m]=-1}
+      for(let si=0;si<S;si++){ if(m>>si&1) continue; const c=cost(p,si); if(c===Infinity)continue;
+        const nm=m|1<<si, v=dp[m]+c; if(v<nd[nm]){nd[nm]=v;pr[nm]=si} } }
+    par.push(pr); dp=nd; }
+  let m=0,best=Infinity; for(let i=0;i<FULL;i++) if(dp[i]<best){best=dp[i];m=i}
+  for(let k=cands.length-1;k>=0;k--){ const si=par[k][m]; const p=cands[k];
+    if(si>=0){ placePhoto(p,SLOT_ORDER[si],false); m&=~(1<<si) } else p.slot=null; }
+  renderAll();
+}
+
+/* ============ LOADING ============ */
+async function addFiles(files){
+  const list=[...files].filter(f=>f.type.startsWith("image/")||/\.(jpe?g|png|webp|heic|tiff?)$/i.test(f.name));
+  if(!list.length){toast("No image files in that drop.");return}
+  setStatus("busy",`Reading ${list.length} photo${list.length>1?"s":""}…`);
+  const bad=[];
+  for(const f of list){
+    try{
+      let bmp=await createImageBitmap(f,{imageOrientation:"from-image"});
+      const sc=Math.min(1,MAX_SIDE/Math.max(bmp.width,bmp.height));
+      if(sc<1){const c=document.createElement("canvas");c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);
+        c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);bmp.close();bmp=await createImageBitmap(c)}
+      const p={id:nextId++,name:f.name,file:f,src:bmp,probs:null,slot:null,locked:false,
+        rot:0,flipH:false,flipV:false,angle:0,crop:null,cache:null,cacheKey:""};
+      photos.set(p.id,p);
+      if(session) await classify(p);
+    }catch(e){console.warn(e);bad.push(f.name)}
+  }
+  if(bad.length) toast(`Couldn't read ${bad.join(", ")}. Save it as JPG and add it again.`,6000);
+  setStatus(modelState==="ready"?"ok":modelState==="loading"?"busy":"warn",
+    modelState==="ready"?"Classifier ready":modelState==="loading"?"Loading classifier…":"Sorting by file name; drag to fix.");
+  if(!$("patient").value&&!folder){const n=list[0].name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ").replace(/\b(front|frontal|smile|profile|upper|lower|left|right|intra|extra|oral|occlusal|img|dsc|\d+)\b/gi,"").trim();
+    if(n.length>2) $("patient").value=n}
+  autoAssign();
+}
+
+/* ============ GEOMETRY ============ */
+function frameSize(p){return (p.rot%2)?{W:p.src.height,H:p.src.width}:{W:p.src.width,H:p.src.height}}
+// Oriented (rot90 + flips) canvas at scale k of the full frame
+function oriented(p,k){
+  const key=`${p.rot}${+p.flipH}${+p.flipV}@${k}`;
+  if(p.cache&&p.cacheKey===key) return p.cache;
+  const {W,H}=frameSize(p), c=document.createElement("canvas");
+  c.width=Math.max(1,Math.round(W*k)); c.height=Math.max(1,Math.round(H*k));
+  const x=c.getContext("2d"); x.translate(c.width/2,c.height/2);
+  x.scale(p.flipH?-1:1,p.flipV?-1:1); x.rotate(p.rot*Math.PI/2);
+  const sw=p.src.width*k, sh=p.src.height*k; x.drawImage(p.src,-sw/2,-sh/2,sw,sh);
+  p.cache=c;p.cacheKey=key;return c;
+}
+function displayScale(p){const {W,H}=frameSize(p);return Math.min(1,1600/Math.max(W,H))}
+
+// Draw photo's crop into a 2D context region
+function drawCrop(ctx,p,dx,dy,dw,dh,src,k){
+  const {W,H}=frameSize(p), c=p.crop;
+  ctx.save(); ctx.beginPath(); ctx.rect(dx,dy,dw,dh); ctx.clip();
+  ctx.translate(dx+dw/2,dy+dh/2); ctx.scale(dw/c.w,dh/c.h); ctx.translate(-c.cx,-c.cy);
+  ctx.translate(W/2,H/2); ctx.rotate(p.angle*Math.PI/180); ctx.translate(-W/2,-H/2);
+  ctx.imageSmoothingQuality="high"; ctx.drawImage(src,0,0,W,H); ctx.restore();
+  void k;
+}
+
+function clampCrop(p){
+  const {W,H}=frameSize(p), c=p.crop, a=c.w/c.h;
+  if(c.w>W){c.w=W;c.h=W/a} if(c.h>H){c.h=H;c.w=H*a}
+  c.w=Math.max(c.w,40); c.h=c.w/a;
+  c.cx=Math.min(Math.max(c.cx,c.w/2),W-c.w/2); c.cy=Math.min(Math.max(c.cy,c.h/2),H-c.h/2);
+}
+
+/* ============ AUTO-CROP ============ */
+// Small analysis copy of the photo (current orientation), ~360px long side
+function analysis(p,angle=p.angle||0){
+  const {W,H}=frameSize(p), k=Math.min(1,360/Math.max(W,H));
+  const w=Math.max(1,Math.round(W*k)), h=Math.max(1,Math.round(H*k));
+  const c=document.createElement("canvas");c.width=w;c.height=h;
+  const x=c.getContext("2d",{willReadFrequently:true});
+  if(angle){x.translate(w/2,h/2);x.rotate(angle*Math.PI/180);x.translate(-w/2,-h/2)}   // same display space the crop lives in
+  x.drawImage(oriented(p,displayScale(p)),0,0,w,h);
+  return {d:x.getImageData(0,0,w,h).data,w,h,k,W,H};
+}
+function cropFor(p,kind,A,an){
+  an=an||analysis(p);
+  const box = kind==="eo" ? eoBox(an.d,an.w,an.h,A) : teethBox(an.d,an.w,an.h,A,kind);
+  return box ? {cx:box.cx/an.k,cy:box.cy/an.k,w:box.w/an.k,h:box.w/an.k/A,detected:true} : fallbackCrop(an.W,an.H,A);
+}
+function autoCrop(p){
+  const slot=SLOTS[p.slot]; p.angle=DEFAULT_ANGLE[p.slot]||0;
+  if(LEVEL_KINDS.includes(slot.kind)){ const an=analysis(p,0); p.angle=Math.round(teethTilt(teethExtent(an.d,an.w,an.h,slot.kind),slot.kind)*10)/10 }
+  p.crop=cropFor(p,slot.kind,slot.aspect);
+  const pr=FRAMING[p.slot];
+  if(pr){ // blend the practice's usual framing with what tooth detection found
+    const {W,H}=frameSize(p), c=p.crop, det=c.detected, bl=(BLEND.byKind&&BLEND.byKind[slot.kind])||BLEND;
+    const pw=pr.w*W, pcx=pr.cx*W, pcy=pr.cy*H, a=det?bl.pos:0, b=det?bl.size:0;
+    c.w=pw+b*(c.w-pw); c.h=c.w/slot.aspect; c.cx=pcx+a*(c.cx-pcx); c.cy=pcy+a*(c.cy-pcy);
+  }
+  clampCrop(p);
+}
+function fallbackCrop(W,H,A){let w=W*0.85,h=w/A;if(h>H*0.85){h=H*0.85;w=h*A}return{cx:W/2,cy:H/2,w,h}}
+function wPct(vals,ws,q){
+  const idx=vals.map((v,i)=>i).sort((a,b)=>vals[a]-vals[b]); const tot=ws.reduce((a,b)=>a+b,0); let acc=0;
+  for(const i of idx){acc+=ws[i]; if(acc>=q*tot) return vals[i]} return vals[idx[idx.length-1]];
+}
+function teethMask(d,w,h,kind){
+  // Enamel is yellow-ivory (hue ~17–50°); skin and lips are redder (8–15°), gingiva and clear retractors are pink (340–360°).
+  const n=w*h, m=new Uint8Array(n), V=new Float32Array(n), cand=[];
+  for(let i=0;i<n;i++){const r=d[i*4],g=d[i*4+1],b=d[i*4+2],mx=Math.max(r,g,b),mn=Math.min(r,g,b),c=mx-mn;
+    V[i]=mx/255; if(!mx||c>0.58*mx||mx!==r||b>g) continue;
+    if(c<0.08*mx){ cand.push(i); continue }   // near-white enamel: hue is unreliable, warm-neutral is enough
+    const hue=60*((g-b)/c); if(hue>=TEETH.hueMin&&hue<=TEETH.hueMax&&g>=0.68*r) cand.push(i)}
+  if(!cand.length) return m;
+  const vs=cand.map(i=>V[i]).sort((a,b)=>a-b), tv=Math.max(TEETH.vMin,vs[Math.floor(vs.length*0.95)]*(TEETH.vRel[kind]??TEETH.vRel.buccal));
+  for(const i of cand) if(V[i]>=tv) m[i]=1;
+  return m;
+}
+function components(m,w,h,rad=1){
+  // dilate to bridge interproximal gaps, then 4-connected labelling
+  const n=w*h, dm=new Uint8Array(n);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){ if(!m[y*w+x])continue;
+    for(let dy=-rad;dy<=rad;dy++)for(let dx=-rad;dx<=rad;dx++){const yy=y+dy,xx=x+dx; if(yy>=0&&yy<h&&xx>=0&&xx<w) dm[yy*w+xx]=1}}
+  const lab=new Int32Array(n), comps=[], st=[];
+  for(let i=0;i<n;i++){ if(!dm[i]||lab[i])continue; const id=comps.length+1; let a=0,sx=0,sy=0,top=false; lab[i]=id; st.push(i);
+    while(st.length){const j=st.pop(), x=j%w, y=(j-x)/w; if(m[j]){a++;sx+=x;sy+=y} if(y===0||y===h-1)top=true;
+      for(const k of [j-1,j+1,j-w,j+w]){ if(k<0||k>=n)continue; if((k===j-1&&x===0)||(k===j+1&&x===w-1))continue;
+        if(dm[k]&&!lab[k]){lab[k]=id;st.push(k)}}}
+    comps.push({id,a,edge:top,cx:a?sx/a/w:0,cy:a?sy/a/h:0}); }
+  return {lab,comps};
+}
+// Extent of the dentition. Buccal/frontal: all tooth regions near the centre (clear of retractor glare).
+// Occlusal: the arch alone (largest merged region), which leaves out the opposing incisors.
+function teethExtent(d,w,h,kind){
+  const m=teethMask(d,w,h,kind), n=w*h, occ=kind==="occlusal";
+  const {lab,comps}=components(m,w,h,TEETH.dilate[kind]||1);
+  const sig=0.24, wt=c=>c.a*(c.edge?0.33:1)*Math.exp(-(((c.cx-.5)**2)+((c.cy-.5)**2))/(2*sig*sig));
+  const big=comps.filter(c=>c.a>=n*0.0015); if(!big.length) return null;
+  let keep;
+  if(occ&&TEETH.occSingle){ const arch=big.reduce((a,c)=>wt(c)>wt(a)?c:a); keep=new Set([arch.id]) }
+  else if(occ){ // every arch piece; pieces running off the frame edge are the opposing incisors or lips
+    const inner=big.filter(c=>!c.edge), pool=inner.length?inner:big, best=Math.max(...pool.map(wt));
+    keep=new Set(pool.filter(c=>wt(c)>=best*TEETH.keepOcc).map(c=>c.id)) }
+  else { const best=Math.max(...big.map(wt)); keep=new Set(big.filter(c=>wt(c)>=best*TEETH.keep).map(c=>c.id)) }
+  const xs=[],ys=[];
+  for(let i=0;i<n;i++){ if(!m[i]||!keep.has(lab[i]))continue; const x=i%w; xs.push(x);ys.push((i-x)/w)}
+  if(xs.length<n*0.004) return null;
+  const q=(arr,f)=>{const s=Float32Array.from(arr).sort();return s[Math.min(s.length-1,Math.floor(f*s.length))]};
+  const e={x1:q(xs,0.02),x2:q(xs,0.98),y1:q(ys,0.02),y2:q(ys,0.98),xs,ys};
+  if(occ){ // which end holds the incisors: the end where the arch is narrow (one cluster, not two molar segments)
+    const span=e.y2-e.y1, cx=(e.x1+e.x2)/2; let top=0,tn=0,bot=0,bn=0;
+    for(let i=0;i<xs.length;i++){ if(ys[i]<e.y1+span*0.2){top+=Math.abs(xs[i]-cx);tn++} else if(ys[i]>e.y2-span*0.2){bot+=Math.abs(xs[i]-cx);bn++} }
+    e.incisorsTop = (tn?top/tn:1e9) <= (bn?bot/bn:1e9);
+  }
+  return e;
+}
+// Tilt (deg) to level the dentition: buccal/frontal = occlusal-plane line of the tooth band;
+// occlusal = line joining the two posterior segments of the arch.
+function teethTilt(e,kind){
+  if(!e) return 0; const {xs,ys}=e, n=xs.length; if(n<50) return 0;
+  let ang=0;
+  if(kind==="occlusal"){
+    const span=e.y2-e.y1, cx=(e.x1+e.x2)/2, post=e.incisorsTop? (y=>y>e.y1+span*0.55) : (y=>y<e.y2-span*0.55);
+    let lx=0,ly=0,ln=0,rx=0,ry=0,rn=0;
+    for(let i=0;i<n;i++){ if(!post(ys[i]))continue; if(xs[i]<cx){lx+=xs[i];ly+=ys[i];ln++} else {rx+=xs[i];ry+=ys[i];rn++} }
+    if(ln<20||rn<20) return 0; ang=Math.atan2(ry/rn-ly/ln, rx/rn-lx/ln);
+  } else {
+    let mx=0,my=0; for(let i=0;i<n;i++){mx+=xs[i];my+=ys[i]} mx/=n; my/=n;
+    let sxx=0,syy=0,sxy=0; for(let i=0;i<n;i++){const dx=xs[i]-mx,dy=ys[i]-my;sxx+=dx*dx;syy+=dy*dy;sxy+=dx*dy}
+    ang=0.5*Math.atan2(2*sxy,sxx-syy);
+  }
+  const deg=-ang*180/Math.PI; return Math.abs(deg)>TEETH.maxLevel?0:deg;
+}
+function teethBox(d,w,h,A,kind){
+  const e=teethExtent(d,w,h,kind); if(!e) return null;
+  const P=CROP[kind], tw=e.x2-e.x1, th=e.y2-e.y1, cw=tw*P.widthScale, ch=cw/A;
+  let cx=(e.x1+e.x2)/2, cy=(e.y1+e.y2)/2;
+  if(kind==="buccal"){ // posterior end = the end farther from the frame centre
+    const postRight = Math.abs(e.x2-w/2) > Math.abs(e.x1-w/2);
+    cx = postRight ? e.x2+P.posteriorPad*cw-cw/2 : e.x1-P.posteriorPad*cw+cw/2 }
+  else if(kind==="occlusal"){ cy = e.incisorsTop ? e.y1-P.incisalPad*ch+ch/2 : e.y2+P.incisalPad*ch-ch/2 }
+  else cy += P.shiftY*ch;
+  void th; return {cx,cy,w:cw};
+}
+function eoBox(d,w,h,A){
+  // Face = rows of skin (hijab/hair/background excluded); head = everything differing from the backdrop.
+  const n=w*h, skin=new Uint8Array(n), rows=new Float32Array(h);
+  for(let i=0;i<n;i++){const r=d[i*4],g=d[i*4+1],b=d[i*4+2];
+    const Y=.299*r+.587*g+.114*b, cb=128-.1687*r-.3313*g+.5*b, cr=128+.5*r-.4187*g-.0813*b;
+    if(Y>70&&cr>=134&&cr<=176&&cb>=78&&cb<=128&&r>g&&g>b*0.92&&g>r*0.52){skin[i]=1;rows[(i/w)|0]++}}
+  let peak=0,py=0; for(let y=0;y<h*0.8;y++) if(rows[y]>peak){peak=rows[y];py=y}
+  if(peak<w*0.03) return null;
+  let top=py,bot=py,gap=0; const lim=peak*0.3, maxGap=Math.max(2,h*0.02);
+  for(let y=py-1;y>=0;y--){ if(rows[y]>=lim){top=y;gap=0} else if(++gap>maxGap) break }
+  gap=0; for(let y=py+1;y<h;y++){ if(rows[y]>=lim){bot=y;gap=0} else if(++gap>maxGap) break }
+  const fh=bot-top; if(fh<h*0.08) return null;
+  // backdrop = median of the two top corners
+  const corner=(x0,y0)=>{const v=[[],[],[]];for(let y=y0;y<y0+Math.max(2,h*.08);y++)for(let x=x0;x<x0+Math.max(2,w*.08);x++){const i=(y*w+x)*4;v[0].push(d[i]);v[1].push(d[i+1]);v[2].push(d[i+2])}
+    return v.map(a=>a.sort((p,q)=>p-q)[a.length>>1])};
+  const c1=corner(0,0), c2=corner(Math.floor(w*.92),0), bg=c1.map((v,i)=>(v+c2[i])/2);
+  let sx=0,sn=0; for(let y=top;y<=bot;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;
+    if(Math.abs(d[i]-bg[0])+Math.abs(d[i+1]-bg[1])+Math.abs(d[i+2]-bg[2])>90||skin[y*w+x]){sx+=x;sn++}}
+  const cx= sn? sx/sn : w/2;
+  let ch=Math.min(h,Math.max(fh*CROP.eo.faceScale,h*CROP.eo.minFill)), cw=ch*A; if(cw>w){cw=w;ch=cw/A}
+  const cy=(top+bot)/2 + ch*(0.5-CROP.eo.faceY);
+  return {cx,cy,w:cw};
+}
+// Brighter, smoother arch interior = palate (upper); darker, redder, textured = tongue (lower)
+function palateScore(p){
+  // raw mirror shot: arch interior sits just above the frame centre
+  const an=analysis(p);
+  const x1=Math.round(an.w*0.38), x2=Math.round(an.w*0.62), y1=Math.round(an.h*0.35), y2=Math.round(an.h*0.62);
+  let sv=0,sg=0,sr=0,s1=0,s2=0,nn=0;
+  for(let y=Math.max(0,y1);y<Math.min(an.h,y2);y++)for(let x=Math.max(0,x1);x<Math.min(an.w,x2);x++){const i=(y*an.w+x)*4,r=an.d[i]/255,g=an.d[i+1]/255,b=an.d[i+2]/255;
+    const l=(r+g+b)/3; sv+=Math.max(r,g,b); sr+=r; sg+=g; s1+=l; s2+=l*l; nn++}
+  if(!nn) return 0; const sd=Math.sqrt(Math.max(0,s2/nn-(s1/nn)**2));
+  return sv/nn + sg/Math.max(1e-6,sr) - 2*sd;
+}
+
+/* ============ PLACEMENT ============ */
+function placePhoto(p,slot,locked){
+  // move occupant out
+  const prev=slotMap[slot]; if(prev&&prev!==p.id){const q=photos.get(prev); if(q){q.slot=null;q.locked=false}}
+  if(p.slot&&slotMap[p.slot]===p.id) slotMap[p.slot]=null;
+  slotMap[slot]=p.id;
+  const changed=p.slot!==slot; p.slot=slot; if(locked) p.locked=true;
+  if(changed||!p.crop){ const portrait=p.src.height>p.src.width && PORTRAIT_ORIENT[slot];
+    const pr=(portrait&&PORTRAIT_ORIENT[slot])||slotPrefs[slot]||DEFAULT_ORIENT[slot]||{}; p.rot=pr.rot||0; p.flipH=!!pr.flipH; p.flipV=!!pr.flipV; autoCrop(p) }
+}
+function swapSlots(a,b){
+  const pa=photos.get(slotMap[a]), pb=photos.get(slotMap[b]);
+  slotMap[a]=null; slotMap[b]=null; if(pa)pa.slot=null; if(pb)pb.slot=null;
+  if(pa) placePhoto(pa,b,true); if(pb) placePhoto(pb,a,true);
+  renderAll();
+}
+
+/* ============ BOARD RENDER ============ */
+function computeLayout(gap){
+  // returns rects in slide inches for each slot + header box
+  const head = $("headSel").value==="1" ? SLIDE.head : 0;
+  const bw=SLIDE.w-2*SLIDE.margin, bh=SLIDE.h-2*SLIDE.margin-head;
+  const colW=(col,H)=>{ // width that makes rows sum to H
+    let inv=0, extra=0; for(const row of col){const sa=row.reduce((a,s)=>a+SLOTS[s].aspect,0); inv+=1/sa; extra+=(row.length-1)*gap/sa}
+    return (H-(col.length-1)*gap+extra)/inv; };
+  let H=bh, widths=LAYOUT.map(c=>colW(c,H)), tot=widths.reduce((a,b)=>a+b,0)+(LAYOUT.length-1)*gap;
+  for(let it=0;it<20&&tot>bw;it++){H*=bw/tot; widths=LAYOUT.map(c=>colW(c,H)); tot=widths.reduce((a,b)=>a+b,0)+(LAYOUT.length-1)*gap}
+  const x0=SLIDE.margin+(bw-tot)/2, y0=SLIDE.margin+head+(bh-H)/2, rects={};
+  let x=x0;
+  LAYOUT.forEach((col,ci)=>{ const cw=widths[ci]; let y=y0;
+    for(const row of col){ const sa=row.reduce((a,s)=>a+SLOTS[s].aspect,0), rh=(cw-(row.length-1)*gap)/sa;
+      const rw=row.reduce((a,s)=>a+SLOTS[s].aspect*rh,0)+(row.length-1)*gap; let xx=x+(cw-rw)/2;
+      for(const s of row){const w=SLOTS[s].aspect*rh; rects[s]={x:xx,y,w,h:rh}; xx+=w+gap} y+=rh+gap }
+    x+=cw+gap; });
+  return {rects, head:{x:x0,y:SLIDE.margin,w:tot,h:head}};
+}
+
+const slotEls={};
+function buildBoard(){
+  board.innerHTML="";
+  for(const s of SLOT_ORDER){
+    const el=document.createElement("div"); el.className="slot"; el.tabIndex=0; el.dataset.slot=s;
+    el.setAttribute("role","button"); el.setAttribute("aria-label",SLOTS[s].group+" "+SLOTS[s].label);
+    el.innerHTML=`<canvas></canvas><div class="ph">${SLOTS[s].group}<br>${SLOTS[s].label}</div><div class="chip" hidden></div>`;
+    el.draggable=true;
+    el.addEventListener("click",()=>{ if(slotMap[s]) openEditor(s); else $("fileIn").click() });
+    el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();el.click()}});
+    el.addEventListener("dragstart",e=>{ if(!slotMap[s]){e.preventDefault();return} e.dataTransfer.setData("text/pa-slot",s); e.dataTransfer.effectAllowed="move"});
+    el.addEventListener("dragover",e=>{ if(isInternal(e)){e.preventDefault();el.classList.add("drop")} });
+    el.addEventListener("dragleave",()=>el.classList.remove("drop"));
+    el.addEventListener("drop",e=>{ el.classList.remove("drop"); if(!isInternal(e))return; e.preventDefault(); e.stopPropagation();
+      const from=e.dataTransfer.getData("text/pa-slot"), pid=e.dataTransfer.getData("text/pa-photo");
+      if(from&&from!==s) swapSlots(from,s);
+      else if(pid){placePhoto(photos.get(+pid),s,true);renderAll()} });
+    board.appendChild(el); slotEls[s]=el;
+  }
+  const hd=document.createElement("div"); hd.className="board-head"; hd.id="boardHead"; board.appendChild(hd);
+}
+function isInternal(e){const t=e.dataTransfer.types;return t.includes("text/pa-slot")||t.includes("text/pa-photo")}
+
+function renderAll(){
+  const bg=$("bgSel").value, gap=+$("gapSel").value, L=computeLayout(gap);
+  board.style.background="#"+bg; board.classList.toggle("light",bg==="ffffff");
+  const bwpx=board.clientWidth, sc=bwpx/SLIDE.w;
+  for(const s of SLOT_ORDER){
+    const r=L.rects[s], el=slotEls[s];
+    Object.assign(el.style,{left:r.x/SLIDE.w*100+"%",top:r.y/SLIDE.h*100+"%",width:r.w/SLIDE.w*100+"%",height:r.h/SLIDE.h*100+"%"});
+    const p=photos.get(slotMap[s]); const cv=el.querySelector("canvas"), chip=el.querySelector(".chip"), ph=el.querySelector(".ph");
+    el.classList.toggle("filled",!!p); ph.hidden=!!p; chip.hidden=!p; cv.hidden=!p;
+    if(p){
+      const dpr=window.devicePixelRatio||1, cw=Math.max(1,Math.round(r.w*sc*dpr)), ch=Math.max(1,Math.round(r.h*sc*dpr));
+      cv.width=cw; cv.height=ch; const x=cv.getContext("2d"); x.fillStyle="#"+bg; x.fillRect(0,0,cw,ch);
+      const k=displayScale(p); x.save(); x.scale(1,1); drawCrop(x,p,0,0,cw,ch,oriented(p,k),k); x.restore();
+      const pr=p.eff?p.eff[s]:null;
+      const col=p.locked||pr==null?"var(--muted)":pr>=CONFIDENT?"var(--ok)":"var(--warn)";
+      chip.innerHTML=`<i style="background:${col}"></i>${p.locked?"placed":pr==null?"name":Math.round(pr*100)+"%"}`;
+    }
+  }
+  const hd=$("boardHead"); const show=$("headSel").value==="1";
+  hd.hidden=!show; hd.textContent=headText();
+  Object.assign(hd.style,{left:L.head.x/SLIDE.w*100+"%",top:L.head.y/SLIDE.h*100+"%",width:L.head.w/SLIDE.w*100+"%",fontSize:(0.22*sc)+"px",lineHeight:(L.head.h*sc*0.8)+"px"});
+  renderTray();
+  const any=SLOT_ORDER.some(s=>slotMap[s]);
+  $("pptxBtn").disabled=!any; $("jpgBtn").disabled=!any; $("photosBtn").disabled=!any;
+  const n=SLOT_ORDER.filter(s=>slotMap[s]).length;
+  $("dzMsg").textContent = photos.size? `${n} of 9 slots filled. Click a slot to fix its crop; drag one slot onto another to swap.` :
+    "Or drop a patient folder or photos anywhere on this page. Click a slot to fix its crop; drag one slot onto another to swap.";
+}
+function headText(){const n=$("patient").value.trim(), d=$("date").value;
+  let ds=""; if(d){const [y,m,dd]=d.split("-");ds=`${dd}/${m}/${y}`} return [n||"Patient",ds].filter(Boolean).join("   ·   ")}
+
+function renderTray(){
+  const t=$("tray"); t.innerHTML="";
+  for(const p of photos.values()){ if(p.slot) continue;
+    const el=document.createElement("div"); el.className="ti"; el.draggable=true; el.title=p.name+" (not placed). Drag onto a slot.";
+    const c=document.createElement("canvas"); c.width=168;c.height=128; const x=c.getContext("2d");
+    const s=Math.max(168/p.src.width,128/p.src.height); x.drawImage(p.src,(168-p.src.width*s)/2,(128-p.src.height*s)/2,p.src.width*s,p.src.height*s);
+    el.appendChild(c);
+    el.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/pa-photo",String(p.id));e.dataTransfer.effectAllowed="move"});
+    t.appendChild(el);
+  }
+}
+
+/* ============ EDITOR ============ */
+let ed={slot:null,p:null,drag:null,view:null};
+function openEditor(slot){
+  ed.slot=slot; ed.p=photos.get(slotMap[slot]); if(!ed.p) return;
+  $("editor").hidden=false; document.body.style.overflow="hidden";
+  const sel=$("edSlot"); sel.innerHTML=SLOT_ORDER.map(s=>`<option value="${s}">${SLOTS[s].group} · ${SLOTS[s].label}</option>`).join(""); sel.value=slot;
+  $("edTitle").textContent=`${SLOTS[slot].group} · ${SLOTS[slot].label}`;
+  const pr=ed.p.eff&&ed.p.eff[slot];
+  $("edSub").textContent=`${ed.p.name}${pr!=null?` · ${Math.round(pr*100)}% match`:""} · slot ${SLOT_ORDER.indexOf(slot)+1}/9`;
+  $("edAngle").value=ed.p.angle; $("edAngleVal").textContent=ed.p.angle.toFixed(1)+"°";
+  requestAnimationFrame(drawEditor); $("edDone").focus();
+}
+function closeEditor(){$("editor").hidden=true;document.body.style.overflow="";renderAll();if(ed.slot)slotEls[ed.slot].focus();ed.p=null}
+function stepEditor(dir){
+  const filled=SLOT_ORDER.filter(s=>slotMap[s]); if(!filled.length) return;
+  let i=filled.indexOf(ed.slot)+dir; if(i>=filled.length||i<0){closeEditor();return}
+  openEditor(filled[i]);
+}
+function drawEditor(){
+  const p=ed.p; if(!p) return;
+  const cv=$("edCanvas"), st=$("edStage"), dpr=window.devicePixelRatio||1;
+  const cw=st.clientWidth, chh=st.clientHeight; cv.width=cw*dpr; cv.height=chh*dpr;
+  const {W,H}=frameSize(p), pad=24, s=Math.min((cw-2*pad)/W,(chh-2*pad)/H), ox=(cw-W*s)/2, oy=(chh-H*s)/2;
+  ed.view={s,ox,oy};
+  const x=cv.getContext("2d"); x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,cw,chh);
+  x.save(); x.translate(ox,oy); x.scale(s,s);
+  x.translate(W/2,H/2); x.rotate(p.angle*Math.PI/180); x.translate(-W/2,-H/2);
+  x.drawImage(oriented(p,displayScale(p)),0,0,W,H); x.restore();
+  const c=p.crop, rx=ox+(c.cx-c.w/2)*s, ry=oy+(c.cy-c.h/2)*s, rw=c.w*s, rh=c.h*s;
+  x.fillStyle="rgba(0,0,0,.55)"; x.beginPath(); x.rect(0,0,cw,chh); x.rect(rx,ry,rw,rh); x.fill("evenodd");
+  x.strokeStyle="#fff"; x.lineWidth=1.5; x.strokeRect(rx,ry,rw,rh);
+  x.strokeStyle="rgba(255,255,255,.35)"; x.lineWidth=1; x.beginPath();
+  for(let i=1;i<3;i++){x.moveTo(rx+rw*i/3,ry);x.lineTo(rx+rw*i/3,ry+rh);x.moveTo(rx,ry+rh*i/3);x.lineTo(rx+rw,ry+rh*i/3)} x.stroke();
+  // midline guide for occlusal levelling
+  x.strokeStyle="rgba(134,166,255,.6)"; x.setLineDash([6,5]); x.beginPath(); x.moveTo(rx+rw/2,ry); x.lineTo(rx+rw/2,ry+rh); x.stroke(); x.setLineDash([]);
+  x.fillStyle="#fff"; for(const [hx,hy] of [[rx,ry],[rx+rw,ry],[rx,ry+rh],[rx+rw,ry+rh]]) x.fillRect(hx-6,hy-6,12,12);
+}
+function toFrame(e){const r=$("edCanvas").getBoundingClientRect(),v=ed.view;return{x:(e.clientX-r.left-v.ox)/v.s,y:(e.clientY-r.top-v.oy)/v.s}}
+$("edCanvas").addEventListener("pointerdown",e=>{
+  if(!ed.p) return; const q=toFrame(e), c=ed.p.crop, tol=14/ed.view.s;
+  const corners=[[-1,-1],[1,-1],[-1,1],[1,1]];
+  let mode="move",anchor=null;
+  for(const [sx,sy] of corners){ if(Math.abs(q.x-(c.cx+sx*c.w/2))<tol&&Math.abs(q.y-(c.cy+sy*c.h/2))<tol){mode="resize";anchor={x:c.cx-sx*c.w/2,y:c.cy-sy*c.h/2,sx,sy}} }
+  ed.drag={mode,anchor,start:q,orig:{...c}}; e.target.setPointerCapture(e.pointerId);
+});
+$("edCanvas").addEventListener("pointermove",e=>{
+  const dg=ed.drag; if(!dg) return; const q=toFrame(e), c=ed.p.crop, a=c.w/c.h;
+  if(dg.mode==="move"){c.cx=dg.orig.cx+q.x-dg.start.x; c.cy=dg.orig.cy+q.y-dg.start.y}
+  else{ let w=Math.max(Math.abs(q.x-dg.anchor.x),Math.abs(q.y-dg.anchor.y)*a); const h=w/a;
+    c.w=w;c.h=h;c.cx=dg.anchor.x+dg.anchor.sx*w/2;c.cy=dg.anchor.y+dg.anchor.sy*h/2 }
+  clampCrop(ed.p); drawEditor();
+});
+const endDrag=()=>{ed.drag=null};
+$("edCanvas").addEventListener("pointerup",endDrag); $("edCanvas").addEventListener("pointercancel",endDrag);
+$("edCanvas").addEventListener("wheel",e=>{ if(!ed.p)return; e.preventDefault(); const c=ed.p.crop, f=Math.exp(e.deltaY*0.0015);
+  c.w*=f;c.h*=f; clampCrop(ed.p); drawEditor() },{passive:false});
+function rememberOrient(){ const p=ed.p; slotPrefs[ed.slot]={rot:p.rot,flipH:p.flipH,flipV:p.flipV}; store.set("pa.slotPrefs",slotPrefs);
+  toast(`Remembered for future ${SLOTS[ed.slot].label.toLowerCase()} photos.`) }
+$("edRot").onclick=()=>{const p=ed.p;p.rot=(p.rot+1)%4;autoCrop(p);rememberOrient();syncAngle();drawEditor()};
+$("edFlipH").onclick=()=>{const p=ed.p;p.flipH=!p.flipH;const {W}=frameSize(p);p.crop.cx=W-p.crop.cx;p.angle=-p.angle;rememberOrient();syncAngle();drawEditor()};
+$("edFlipV").onclick=()=>{const p=ed.p;p.flipV=!p.flipV;const {H}=frameSize(p);p.crop.cy=H-p.crop.cy;p.angle=-p.angle;rememberOrient();syncAngle();drawEditor()};
+$("edAuto").onclick=()=>{autoCrop(ed.p);syncAngle();drawEditor()};
+function syncAngle(){$("edAngle").value=ed.p.angle;$("edAngleVal").textContent=ed.p.angle.toFixed(1)+"°"}
+$("edAngle").addEventListener("input",e=>{ed.p.angle=+e.target.value;$("edAngleVal").textContent=ed.p.angle.toFixed(1)+"°";drawEditor()});
+$("edDone").onclick=closeEditor; $("edPrev").onclick=()=>stepEditor(-1); $("edNext").onclick=()=>stepEditor(1);
+$("edSlot").addEventListener("change",e=>{ const to=e.target.value; if(to===ed.slot) return; swapSlots(ed.slot,to); openEditor(to) });
+document.addEventListener("keydown",e=>{
+  if($("editor").hidden||!ed.p) return;
+  if(e.target.tagName==="SELECT"||e.target.tagName==="INPUT") { if(e.key==="Escape") closeEditor(); return }
+  const c=ed.p.crop, st=(e.shiftKey?10:2)/ed.view.s;
+  const mv={ArrowLeft:[-st,0],ArrowRight:[st,0],ArrowUp:[0,-st],ArrowDown:[0,st]}[e.key];
+  if(mv){e.preventDefault();c.cx+=mv[0];c.cy+=mv[1];clampCrop(ed.p);drawEditor()}
+  else if(e.key==="Enter"){e.preventDefault();stepEditor(1)}
+  else if(e.key==="Escape"){closeEditor()}
+  else if(e.key==="+"||e.key==="="){c.w*=0.96;c.h*=0.96;clampCrop(ed.p);drawEditor()}
+  else if(e.key==="-"){c.w/=0.96;c.h/=0.96;clampCrop(ed.p);drawEditor()}
+});
+window.addEventListener("resize",()=>{renderAll(); if(!$("editor").hidden) drawEditor()});
+
+/* ============ EXPORT ============ */
+function fileBase(){const n=($("patient").value.trim()||"Patient").replace(/[\\/:*?"<>|]+/g,"").replace(/\s+/g,"_");return `${n}_${$("date").value||"photos"}`}
+function cropToJpeg(p,wIn,hIn){ // ~300dpi, never upscaled past the source crop
+  const {W,H}=frameSize(p); const maxW=Math.min(p.crop.w,wIn*300), w=Math.round(maxW), h=Math.round(maxW*hIn/wIn);
+  const c=document.createElement("canvas"); c.width=w; c.height=h; const x=c.getContext("2d");
+  x.fillStyle="#"+$("bgSel").value; x.fillRect(0,0,w,h);
+  const full=document.createElement("canvas"); full.width=W; full.height=H; const fx=full.getContext("2d");
+  fx.translate(W/2,H/2); fx.scale(p.flipH?-1:1,p.flipV?-1:1); fx.rotate(p.rot*Math.PI/2); fx.drawImage(p.src,-p.src.width/2,-p.src.height/2);
+  drawCrop(x,p,0,0,w,h,full,1); return c.toDataURL("image/jpeg",0.92);
+}
+const JPEG_Q = 0.95;          // quality of the separate photos
+const SLOT_FILE = {eo_front:"Front", eo_front_smile:"Front-Smile", eo_profile:"Profile", eo_profile_smile:"Profile-Smile",
+                   io_frontal:"Frontal", io_right:"Right", io_left:"Left", io_upper:"Upper", io_lower:"Lower"};
+function download(filename,blob){
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+function confirmDialog(title,text,items,yes="Replace"){
+  return new Promise(res=>{
+    const d=$("confirmDlg"); $("cfTitle").textContent=title; $("cfText").textContent=text; $("cfYes").textContent=yes;
+    $("cfList").innerHTML=""; for(const it of items){const li=document.createElement("li"); li.textContent=it; $("cfList").appendChild(li)}
+    const done=v=>{ $("cfYes").onclick=$("cfNo").onclick=d.oncancel=null; if(d.open) d.close(); res(v) };
+    $("cfYes").onclick=()=>done(true); $("cfNo").onclick=()=>done(false); d.oncancel=e=>{e.preventDefault(); done(false)};
+    d.showModal(); $("cfNo").focus();
+  });
+}
+async function writeFile(dir,name,blob){
+  const fh=await dir.getFileHandle(name,{create:true}); const w=await fh.createWritable(); await w.write(blob); await w.close();
+}
+// Collage files: into the patient folder when one is open, otherwise a normal download
+async function saveFile(filename,blob){
+  if(folder){
+    if(!(await ensurePerm(folder.dir))){toast("Saving needs permission to edit the patient folder.",5000);return}
+    let exists=false; try{ await folder.dir.getFileHandle(filename); exists=true }catch(e){}
+    if(exists && !(await confirmDialog("Replace file?",`${folder.dir.name} already has this file.`,[filename]))) return;
+    try{ await writeFile(folder.dir,filename,blob); toast(`Saved ${filename} to ${folder.dir.name}`) }
+    catch(e){ toast(`Couldn't save ${filename}: ${e.message}`,6000) }
+    return;
+  }
+  download(filename,blob);
+}
+// One photo at the camera's full resolution, with the crop, rotation and levelling from the board
+async function renderCropFull(p){
+  let bmp=null;
+  try{ if(p.file) bmp=await createImageBitmap(p.file,{imageOrientation:"from-image"}) }catch(e){ bmp=null }
+  const src=bmp||p.src, f=src.width/p.src.width;
+  const FW=(p.rot%2)?src.height:src.width, FH=(p.rot%2)?src.width:src.height;
+  const full=document.createElement("canvas"); full.width=FW; full.height=FH; const fx=full.getContext("2d");
+  fx.translate(FW/2,FH/2); fx.scale(p.flipH?-1:1,p.flipV?-1:1); fx.rotate(p.rot*Math.PI/2); fx.drawImage(src,-src.width/2,-src.height/2);
+  if(bmp) bmp.close();
+  const ow=Math.max(1,Math.round(p.crop.w*f)), oh=Math.max(1,Math.round(p.crop.h*f));
+  const c=document.createElement("canvas"); c.width=ow; c.height=oh; const x=c.getContext("2d");
+  x.fillStyle="#000"; x.fillRect(0,0,ow,oh); x.imageSmoothingQuality="high";
+  drawCrop(x,p,0,0,ow,oh,full,1);
+  full.width=0; full.height=0;
+  const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",JPEG_Q)); c.width=0; c.height=0; return blob;
+}
+async function savePhotos(){
+  const filled=SLOT_ORDER.filter(s=>slotMap[s]); if(!filled.length) return;
+  let dir=folder&&folder.dir;
+  if(!dir){
+    if(!FS_OK){ for(const s of filled){ download(SLOT_FILE[s]+".jpg", await renderCropFull(photos.get(slotMap[s]))) } return }
+    try{ dir=await showDirectoryPicker({id:"pa-save",mode:"readwrite"}) }catch(e){ if(e.name!=="AbortError") toast("Couldn't open that folder: "+e.message); return }
+  }
+  if(!(await ensurePerm(dir))){toast("Saving needs permission to edit that folder.",5000);return}
+  // existing crops, matched by view name whatever their case or extension (Front.JPG, front.png ...)
+  const have={};
+  for await (const [name,h] of dir.entries()) if(h.kind==="file"){ const v=cropView(name); if(v) (have[v]=have[v]||[]).push(name) }
+  const clash=filled.flatMap(s=>have[SLOT_FILE[s]]||[]);
+  if(clash.length && !(await confirmDialog("Replace existing photos?",`${dir.name} already has ${clash.length} cropped photo${clash.length>1?"s":""}. They'll be replaced by the new crops:`,clash))) return;
+  const b=$("photosBtn"); b.disabled=true; let n=0; const bad=[];
+  for(const s of filled){
+    b.textContent=`Saving ${++n} of ${filled.length}…`;
+    const p=photos.get(slotMap[s]), want=SLOT_FILE[s]+".jpg", old=have[SLOT_FILE[s]]||[];
+    try{
+      const blob=await renderCropFull(p);
+      const keep=old.find(o=>/\.jpe?g$/i.test(o));          // reuse an existing JPEG's exact name
+      await writeFile(dir, keep||want, blob);
+      for(const o of old) if(o!==(keep||want)) await dir.removeEntry(o);   // e.g. an older Front.png
+    }catch(e){ console.error(e); bad.push(want) }
+  }
+  b.disabled=false; b.textContent="Save 9 photos";
+  if(bad.length) toast(`Couldn't save ${bad.join(", ")}. Check the folder isn't read-only.`,7000);
+  else toast(`Saved ${filled.length} photo${filled.length>1?"s":""} to ${dir.name}`,4000);
+}
+
+/* ============ PATIENT FOLDER ============ */
+const FS_OK = "showDirectoryPicker" in window;
+const CROP_KEYS = {front:"Front",frontsmile:"Front-Smile",profile:"Profile",profilesmile:"Profile-Smile",frontal:"Frontal",right:"Right",left:"Left",upper:"Upper",lower:"Lower"};
+const CROP_WORDS = /front|frontal|smile|profile|right|left|upper|lower|collage|crop/;
+const RECORD_FOLDERS = ["initials","initial","progress","final","finals","retention","records"];
+const IMG_RE = /\.(jpe?g|png|webp|tiff?|bmp)$/i;
+let folder=null;   // {root, dir, patient, recs}
+function nameKey(n){ return n.replace(/\.[^.]+$/,"").toLowerCase().replace(/[^a-z]/g,"") }
+function cropView(n){ return IMG_RE.test(n) ? (CROP_KEYS[nameKey(n)]||null) : null }
+async function ensurePerm(h){
+  if(!h.queryPermission) return true;
+  const o={mode:"readwrite"}; if((await h.queryPermission(o))==="granted") return true;
+  try{ return (await h.requestPermission(o))==="granted" }catch(e){ return false }
+}
+async function openFolderHandle(root){
+  const isRec=n=>RECORD_FOLDERS.includes(n.trim().toLowerCase());
+  const subs=[]; for await (const [n,h] of root.entries()) if(h.kind==="directory" && isRec(n)) subs.push(h);
+  subs.sort((a,b)=>{const ai=/^initials?$/i.test(a.name.trim()), bi=/^initials?$/i.test(b.name.trim()); return ai===bi? a.name.localeCompare(b.name) : ai?-1:1});
+  let dir=root, patient=root.name;
+  if(isRec(root.name)) patient="";              // a records folder was opened directly: the patient's name isn't known
+  else if(subs.length) dir=subs[0];
+  folder={root,dir,patient,recs:isRec(root.name)?[]:subs};
+  await loadFromFolder();
+}
+async function loadFromFolder(){
+  resetBoard();
+  const crops=[], originals=[];
+  for await (const [n,h] of folder.dir.entries()){
+    if(h.kind!=="file"||!IMG_RE.test(n)) continue;
+    if(cropView(n)) crops.push(n); else if(!CROP_WORDS.test(nameKey(n))) originals.push(h);
+  }
+  originals.sort((a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true}));
+  $("patient").value=folder.patient;
+  $("folderName").textContent=[folder.patient,folder.dir===folder.root?"":folder.dir.name].filter(Boolean).join(" › ")||folder.dir.name;
+  const sel=$("folderSub"); sel.hidden=folder.recs.length<2; sel.innerHTML="";
+  folder.recs.forEach((d,i)=>{const o=document.createElement("option"); o.value=String(i); o.textContent=d.name; sel.appendChild(o)});
+  sel.value=String(Math.max(0,folder.recs.indexOf(folder.dir)));
+  $("folderInfo").textContent=`${originals.length} camera photo${originals.length===1?"":"s"}`+(crops.length?` · ${crops.length} cropped already`:"");
+  $("folderBox").hidden=false;
+  if(!originals.length){ toast(`No camera photos found in ${folder.dir.name}.`,5000); renderAll(); return }
+  const files=[]; for(const h of originals){ try{ files.push(await h.getFile()) }catch(e){} }
+  await addFiles(files);
+}
+async function openPatientFolder(){
+  if(!FS_OK){toast("Opening folders needs Microsoft Edge or Google Chrome. You can still add photos and save them one by one.",6000);return}
+  let root; try{ root=await showDirectoryPicker({id:"pa-patient",mode:"readwrite"}) }catch(e){ if(e.name!=="AbortError") toast("Couldn't open that folder: "+e.message); return }
+  await openFolderHandle(root);
+}
+function resetBoard(){ for(const p of photos.values()) try{p.src.close()}catch(e){} photos.clear(); for(const s of SLOT_ORDER) slotMap[s]=null; ed.p=null }
+function closeFolder(){ folder=null; $("folderBox").hidden=true; resetBoard(); $("patient").value=""; renderAll() }
+
+$("pptxBtn").onclick=async()=>{
+  if(typeof PptxGenJS==="undefined"){toast("PowerPoint library didn't load. Check your connection and reload.");return}
+  const b=$("pptxBtn"); b.disabled=true; b.textContent="Building…";
+  try{
+    const gap=+$("gapSel").value, L=computeLayout(gap), bg=$("bgSel").value;
+    const pp=new PptxGenJS(); pp.layout="LAYOUT_WIDE"; pp.title=headText();
+    const sl=pp.addSlide(); sl.background={color:bg};
+    for(const s of SLOT_ORDER){const p=photos.get(slotMap[s]); if(!p) continue; const r=L.rects[s];
+      sl.addImage({data:cropToJpeg(p,r.w,r.h),x:r.x,y:r.y,w:r.w,h:r.h,altText:`${SLOTS[s].group} ${SLOTS[s].label}`}); await new Promise(r=>setTimeout(r))}
+    if($("headSel").value==="1") sl.addText(headText(),{x:L.head.x,y:L.head.y,w:L.head.w,h:L.head.h,fontFace:"Arial",fontSize:16,bold:true,color:bg==="ffffff"?"111111":"FFFFFF",margin:0,valign:"middle"});
+    const blob=await pp.write({outputType:"blob"});
+    await saveFile(fileBase()+".pptx",blob);
+  }catch(e){console.error(e);toast("Couldn't build the PowerPoint: "+e.message,5000)}
+  b.disabled=false; b.textContent="Save PowerPoint";
+};
+$("jpgBtn").onclick=async()=>{
+  const b=$("jpgBtn"); b.disabled=true; b.textContent="Building…";
+  try{
+    const ppi=240, gap=+$("gapSel").value, L=computeLayout(gap), bg=$("bgSel").value;
+    const c=document.createElement("canvas"); c.width=Math.round(SLIDE.w*ppi); c.height=Math.round(SLIDE.h*ppi);
+    const x=c.getContext("2d"); x.fillStyle="#"+bg; x.fillRect(0,0,c.width,c.height);
+    for(const s of SLOT_ORDER){const p=photos.get(slotMap[s]); if(!p) continue; const r=L.rects[s];
+      const img=new Image(); img.src=cropToJpeg(p,r.w,r.h); await img.decode();
+      x.drawImage(img,r.x*ppi,r.y*ppi,r.w*ppi,r.h*ppi)}
+    if($("headSel").value==="1"){x.fillStyle=bg==="ffffff"?"#111":"#fff"; x.font=`600 ${0.22*ppi}px Arial, sans-serif`; x.textBaseline="middle";
+      x.fillText(headText(),L.head.x*ppi,(L.head.y+L.head.h*0.4)*ppi)}
+    const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.92));
+    await saveFile(fileBase()+".jpg",blob);
+  }catch(e){console.error(e);toast("Couldn't build the JPG: "+e.message,5000)}
+  b.disabled=false; b.textContent="Save JPG";
+};
+
+/* ============ WIRING ============ */
+$("addBtn").onclick=()=>$("fileIn").click();
+$("fileIn").addEventListener("change",e=>{addFiles(e.target.files);e.target.value=""});
+const dz=$("dropzone");
+document.addEventListener("dragover",e=>{ if(e.dataTransfer.types.includes("Files")){e.preventDefault();dz.classList.add("over")} });
+document.addEventListener("dragleave",e=>{ if(!e.relatedTarget) dz.classList.remove("over") });
+document.addEventListener("drop",async e=>{ dz.classList.remove("over"); if(!(e.dataTransfer.files&&e.dataTransfer.files.length)) return; e.preventDefault();
+  const items=[...e.dataTransfer.items], files=[...e.dataTransfer.files];
+  if(FS_OK && items.length===1 && items[0].getAsFileSystemHandle){       // a dropped folder opens as the patient folder
+    const h=await items[0].getAsFileSystemHandle().catch(()=>null);
+    if(h&&h.kind==="directory"){ await openFolderHandle(h); return }
+  }
+  addFiles(files) });
+$("tray").addEventListener("dragover",e=>{if(e.dataTransfer.types.includes("text/pa-slot"))e.preventDefault()});
+$("tray").addEventListener("drop",e=>{const s=e.dataTransfer.getData("text/pa-slot"); if(!s)return; e.preventDefault(); e.stopPropagation();
+  const p=photos.get(slotMap[s]); slotMap[s]=null; if(p){p.slot=null;p.locked=false;p.crop=null} renderAll()});
+for(const id of ["bgSel","gapSel","headSel"]) $(id).addEventListener("change",()=>{uiPrefs={bg:$("bgSel").value,gap:$("gapSel").value,head:$("headSel").value};store.set("pa.ui",uiPrefs);renderAll()});
+for(const id of ["patient","date"]) $(id).addEventListener("input",renderAll);
+$("clearBtn").onclick=()=>{ if(folder){closeFolder();return} resetBoard(); $("patient").value=""; renderAll() };
+$("folderBtn").onclick=openPatientFolder;
+$("folderClose").onclick=closeFolder;
+$("folderSub").addEventListener("change",async e=>{ folder.dir=folder.recs[+e.target.value]; await loadFromFolder() });
+$("photosBtn").onclick=savePhotos;
+
+/* ============ INSTALL + OFFLINE ============ */
+let installEvt=null;
+window.addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); installEvt=e; $("installBtn").hidden=false });
+window.addEventListener("appinstalled",()=>{ installEvt=null; $("installBtn").hidden=true; toast("Installed. You'll find PhotoAlign in the Start menu.") });
+$("installBtn").onclick=async()=>{ if(!installEvt) return; installEvt.prompt(); await installEvt.userChoice.catch(()=>{}); installEvt=null; $("installBtn").hidden=true };
+if("serviceWorker" in navigator && location.protocol!=="file:") navigator.serviceWorker.register("sw.js").catch(e=>console.warn("offline cache unavailable",e));
+
+buildBoard(); renderAll();
+loadModel();
+</script>
+</body>
+</html>

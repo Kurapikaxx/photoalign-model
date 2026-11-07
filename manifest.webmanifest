@@ -1,0 +1,16 @@
+{
+  "name": "PhotoAlign Collage",
+  "short_name": "PhotoAlign",
+  "description": "Sorts, crops and lays out a patient's 9 clinical photos, and saves them back to the patient folder.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef0f3",
+  "theme_color": "#1f4fbf",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
