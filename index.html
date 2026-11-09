@@ -30,6 +30,7 @@
   --bg:#12151b; --panel:#1b2029; --ink:#e7eaf0; --muted:#9aa3b2; --line:#2d3441;
   --accent:#86a6ff; --accent-ink:#0d1324; --accent-soft:#222c45;
   --ok:#5fcf95; --warn:#f0b35a; --bad:#ff8a80; --well:#0d1015; color-scheme:dark}
+[hidden]{display:none!important}
 *,*::before,*::after{box-sizing:border-box}
 [hidden]{display:none!important}
 img{max-width:100%}
@@ -109,7 +110,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .slot.selected::after{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgba(255,255,255,.6)}
 .slot .crop{position:absolute;right:4px;bottom:4px;padding:3px 9px;border:0;border-radius:999px;background:rgba(0,0,0,.66);color:#fff;font-size:11.5px;font-weight:600;opacity:0;transition:opacity .12s;z-index:2}
 .slot:hover .crop,.slot.selected .crop,.slot:focus-within .crop{opacity:1}
-@media (hover:none){.slot .crop{opacity:1}}
+.slot .mv{position:absolute;left:4px;bottom:4px;padding:3px 9px;border:0;border-radius:999px;background:rgba(0,0,0,.66);color:#fff;font-size:11.5px;font-weight:600;opacity:0;transition:opacity .12s;z-index:2;cursor:move}
+.slot:hover .mv,.slot.selected .mv,.slot:focus-within .mv{opacity:1}
+.slot.filled{cursor:grab;touch-action:none}
+.slot.panning{cursor:grabbing}
+.slot.panning .rm,.slot.panning .crop,.slot.panning .mv,.slot.panning .chip{opacity:0}
+@media (hover:none){.slot .crop,.slot .mv{opacity:1}}
 .ed-panel{width:300px;flex:none;overflow:auto;background:var(--panel);border-left:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 .ed-panel h4{margin:6px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
 .adj-row{display:grid;grid-template-columns:82px 1fr 46px;align-items:center;gap:8px;font-size:12.5px}
@@ -162,7 +168,7 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
     <button type="button" class="primary" id="folderBtn">Open patient folder</button>
     <button type="button" id="addBtn">Add photos</button>
     <input type="file" id="fileIn" accept="image/*" multiple hidden>
-    <div class="msg" id="dzMsg">Or drop a patient folder or photos anywhere on this page. Click a photo to select it for adjusting; double-click to crop. Drag one photo onto another to swap.</div>
+    <div class="msg" id="dzMsg">Or drop a patient folder or photos anywhere on this page. Click a photo to select it; drag inside it to reposition. Double-click for the full crop editor; drag ⇄ Swap onto another photo to swap them.</div>
     <div class="folder" id="folderBox" hidden>
       <span>Saving to <b id="folderName"></b></span>
       <select id="folderSub" aria-label="Records folder" hidden></select>
@@ -179,7 +185,17 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
       <div class="adj-pick" role="group" aria-label="Select photos">
         <button type="button" data-pick="all">All</button><button type="button" data-pick="io">Intra-orals</button><button type="button" data-pick="eo">Extra-orals</button><button type="button" data-pick="none">None</button>
       </div>
-      <p class="hint">Click a photo to select it; Ctrl- or Shift-click to add more. Double-click a photo to crop it.</p>
+      <p class="hint">Click a photo to select it; Ctrl- or Shift-click to add more. Drag inside a photo to reposition it; scroll on a selected photo to zoom.</p>
+      <h4>Crop</h4>
+      <div class="adj-row" id="adjrow_level"><label for="crop_level" title="Double-click to reset">Level</label><input type="range" id="crop_level" min="-15" max="15" step="0.1" value="0"><output id="cropv_level" for="crop_level">0.0°</output></div>
+      <div class="adj-btns">
+        <button type="button" id="cropOut" title="Zoom out" aria-label="Zoom out">−</button>
+        <button type="button" id="cropIn" title="Zoom in" aria-label="Zoom in">+</button>
+        <button type="button" id="cropRot">Rotate 90°</button>
+        <button type="button" id="cropFlipH" title="Flip left–right">Flip ↔</button>
+        <button type="button" id="cropFlipV" title="Flip top–bottom">Flip ↕</button>
+        <button type="button" id="cropAuto">Auto-crop</button>
+      </div>
       <canvas id="edHist" width="256" height="64" aria-label="Histogram of the selected photo"></canvas>
       <div class="adj-btns">
         <button type="button" id="adjAuto" title="Set white and black points for each selected photo">Auto</button>
@@ -642,19 +658,39 @@ function buildBoard(){
   for(const s of SLOT_ORDER){
     const el=document.createElement("div"); el.className="slot"; el.tabIndex=0; el.dataset.slot=s;
     el.setAttribute("role","button"); el.setAttribute("aria-label",SLOTS[s].group+" "+SLOTS[s].label);
-    el.innerHTML=`<canvas></canvas><div class="ph">${SLOTS[s].group}<br>${SLOTS[s].label}</div><div class="chip" hidden></div><button type="button" class="rm" aria-label="Remove ${SLOTS[s].group} ${SLOTS[s].label} photo" title="Remove from collage" hidden>×</button><button type="button" class="crop" hidden>Crop</button>`;
+    el.innerHTML=`<canvas></canvas><div class="ph">${SLOTS[s].group}<br>${SLOTS[s].label}</div><div class="chip" hidden></div><button type="button" class="rm" aria-label="Remove ${SLOTS[s].group} ${SLOTS[s].label} photo" title="Remove from collage" hidden>×</button><button type="button" class="crop" hidden>Crop</button><button type="button" class="mv" draggable="true" title="Drag onto another photo to swap them" hidden>⇄ Swap</button>`;
     el.querySelector(".crop").addEventListener("click",e=>{ e.stopPropagation(); if(slotMap[s]) openEditor(s) });
     el.querySelector(".crop").addEventListener("dblclick",e=>e.stopPropagation());
     el.querySelector(".rm").addEventListener("click",e=>{ e.stopPropagation(); if(slotMap[s]) removePhoto(slotMap[s]) });
     el.querySelector(".rm").addEventListener("keydown",e=>e.stopPropagation());
-    el.draggable=true;
-    el.addEventListener("click",e=>{ const id=slotMap[s]; if(!id){ $("fileIn").click(); return }
+    const mv=el.querySelector(".mv");
+    mv.addEventListener("click",e=>e.stopPropagation());
+    mv.addEventListener("dragstart",e=>{ e.stopPropagation(); if(!slotMap[s]){e.preventDefault();return}
+      e.dataTransfer.setData("text/pa-slot",s); e.dataTransfer.effectAllowed="move"; try{ e.dataTransfer.setDragImage(el,24,24) }catch(_){} });
+    // drag inside the photo = move the crop; the picture follows the pointer
+    el.addEventListener("pointerdown",e=>{ const id=slotMap[s]; if(!id||e.button!==0||e.target.closest("button")) return;
+      const p=photos.get(id); el._pan={x:e.clientX,y:e.clientY,cx:p.crop.cx,cy:p.crop.cy,moved:false,pid:e.pointerId} });
+    el.addEventListener("pointermove",e=>{ const g=el._pan; if(!g) return; const dx=e.clientX-g.x, dy=e.clientY-g.y;
+      if(!g.moved){ if(Math.hypot(dx,dy)<4) return; g.moved=true; try{ el.setPointerCapture(g.pid) }catch(_){} el.classList.add("panning") }
+      const p=photos.get(slotMap[s]); if(!p) return; const r=el.getBoundingClientRect();
+      p.crop.cx=g.cx-dx*p.crop.w/r.width; p.crop.cy=g.cy-dy*p.crop.h/r.height; clampCrop(p); scheduleTile(s) });
+    const endPan=()=>{ const g=el._pan; el._pan=null; el.classList.remove("panning");
+      if(g&&g.moved){ el._justPanned=true; setTimeout(()=>{ el._justPanned=false },0); if(sel.has(slotMap[s])) drawHist() } };
+    el.addEventListener("pointerup",endPan); el.addEventListener("pointercancel",endPan);
+    // scroll on a selected photo = zoom around the pointer (unselected photos let the page scroll)
+    el.addEventListener("wheel",e=>{ const id=slotMap[s]; if(!id||!sel.has(id)) return; e.preventDefault();
+      const r=el.getBoundingClientRect(); zoomCrop(photos.get(id),Math.exp(e.deltaY*0.0015),(e.clientX-r.left)/r.width-0.5,(e.clientY-r.top)/r.height-0.5); scheduleTile(s) },{passive:false});
+    el.addEventListener("click",e=>{ if(el._justPanned) return; const id=slotMap[s]; if(!id){ $("fileIn").click(); return }
       if(e.ctrlKey||e.metaKey||e.shiftKey) toggleSel(id); else selectOnly(id) });
     el.addEventListener("dblclick",()=>{ if(slotMap[s]) openEditor(s) });
     el.addEventListener("keydown",e=>{ if(e.target!==el) return;
       if(e.key==="Enter"){ e.preventDefault(); if(slotMap[s]) openEditor(s); else $("fileIn").click() }
-      else if(e.key===" "){ e.preventDefault(); if(slotMap[s]) toggleSel(slotMap[s]) } });
-    el.addEventListener("dragstart",e=>{ if(!slotMap[s]){e.preventDefault();return} e.dataTransfer.setData("text/pa-slot",s); e.dataTransfer.effectAllowed="move"});
+      else if(e.key===" "){ e.preventDefault(); if(slotMap[s]) toggleSel(slotMap[s]) }
+      else if(slotMap[s]){ const p=photos.get(slotMap[s]), c=p.crop, st=(e.shiftKey?0.05:0.01);
+        const mvk={ArrowLeft:[-st,0],ArrowRight:[st,0],ArrowUp:[0,-st],ArrowDown:[0,st]}[e.key];
+        if(mvk){ e.preventDefault(); c.cx+=mvk[0]*c.w; c.cy+=mvk[1]*c.h; clampCrop(p); scheduleTile(s) }
+        else if(e.key==="+"||e.key==="="){ e.preventDefault(); zoomCrop(p,0.95,0,0); scheduleTile(s) }
+        else if(e.key==="-"){ e.preventDefault(); zoomCrop(p,1/0.95,0,0); scheduleTile(s) } } });
     el.addEventListener("dragover",e=>{ if(isInternal(e)){e.preventDefault();el.classList.add("drop")} });
     el.addEventListener("dragleave",()=>el.classList.remove("drop"));
     el.addEventListener("drop",e=>{ el.classList.remove("drop"); if(!isInternal(e))return; e.preventDefault(); e.stopPropagation();
@@ -666,6 +702,10 @@ function buildBoard(){
 }
 function isInternal(e){const t=e.dataTransfer.types;return t.includes("text/pa-slot")||t.includes("text/pa-photo")}
 
+// zoom a crop by factor f, keeping the point at (u,v) (fractions from the tile centre) still
+function zoomCrop(p,f,u,v){ const c=p.crop, qx=c.cx+u*c.w, qy=c.cy+v*c.h; c.w*=f; c.h*=f; clampCrop(p); c.cx=qx-u*c.w; c.cy=qy-v*c.h; clampCrop(p) }
+const pendingTiles=new Set(); let tileRaf=0;
+function scheduleTile(s){ pendingTiles.add(s); if(!tileRaf) tileRaf=requestAnimationFrame(()=>{ tileRaf=0; const sc=board.clientWidth/SLIDE.w; for(const t of pendingTiles) drawTile(t,sc); pendingTiles.clear() }) }
 function drawTile(s,sc){
   const p=photos.get(slotMap[s]), r=computeLayout().rects[s]; if(!p||!r) return;
   sc=sc||board.clientWidth/SLIDE.w;
@@ -684,7 +724,7 @@ function renderAll(){
     const r=L.rects[s], el=slotEls[s];
     Object.assign(el.style,{left:r.x/SLIDE.w*100+"%",top:r.y/SLIDE.h*100+"%",width:r.w/SLIDE.w*100+"%",height:r.h/SLIDE.h*100+"%"});
     const p=photos.get(slotMap[s]); const cv=el.querySelector("canvas"), chip=el.querySelector(".chip"), ph=el.querySelector(".ph");
-    el.classList.toggle("filled",!!p); ph.hidden=!!p; chip.hidden=!p; cv.hidden=!p; el.querySelector(".rm").hidden=!p; el.querySelector(".crop").hidden=!p;
+    el.classList.toggle("filled",!!p); ph.hidden=!!p; chip.hidden=!p; cv.hidden=!p; el.querySelector(".rm").hidden=!p; el.querySelector(".crop").hidden=!p; el.querySelector(".mv").hidden=!p;
     el.classList.toggle("selected",!!p&&sel.has(p.id));
     if(p){
       drawTile(s,sc);
@@ -697,8 +737,8 @@ function renderAll(){
   const any=SLOT_ORDER.some(s=>slotMap[s]);
   $("pptxBtn").disabled=!any; $("jpgBtn").disabled=!any; $("photosBtn").disabled=!any;
   const n=SLOT_ORDER.filter(s=>slotMap[s]).length;
-  $("dzMsg").textContent = photos.size? `${n} of 9 slots filled. Click a photo to select it for adjusting; double-click to crop. Drag one photo onto another to swap.` :
-    "Or drop a patient folder or photos anywhere on this page. Click a photo to select it for adjusting; double-click to crop. Drag one photo onto another to swap.";
+  $("dzMsg").textContent = photos.size? `${n} of 9 slots filled. Click a photo to select it; drag inside it to reposition. Double-click for the full crop editor; drag ⇄ Swap onto another photo to swap them.` :
+    "Or drop a patient folder or photos anywhere on this page. Click a photo to select it; drag inside it to reposition. Double-click for the full crop editor; drag ⇄ Swap onto another photo to swap them.";
 }
 function headText(){const n=$("patient").value.trim(), d=$("date").value;
   let ds=""; if(d){const [y,m,dd]=d.split("-");ds=`${dd}/${m}/${y}`} return [n||"Patient",ds].filter(Boolean).join("   ·   ")}
@@ -983,7 +1023,10 @@ function syncPanel(){
     $("adjv_"+k).textContent = !n ? "" : same ? fmtAdj(k,v) : "mixed";
     $("adjrow_"+k).classList.toggle("changed",n>0&&(!same||v!==0));
   }
-  for(const id of ["adjAuto","adjReset","adjCompare"]) $(id).disabled=!n;
+  for(const id of ["adjAuto","adjReset","adjCompare","crop_level","cropOut","cropIn","cropRot","cropFlipH","cropFlipV","cropAuto"]) $(id).disabled=!n;
+  const angs=ps.map(p=>Math.round((p.angle||0)*10)/10), sameA=angs.every(v=>v===angs[0]);
+  $("crop_level").value=sameA&&n?angs[0]:0; $("cropv_level").textContent=!n?"":sameA?angs[0].toFixed(1)+"°":"mixed";
+  $("adjrow_level").classList.toggle("changed",n>0&&(!sameA||angs[0]!==0));
   drawHist();
 }
 function redrawSelected(){ const sc=board.clientWidth/SLIDE.w; for(const p of selPhotos()) drawTile(p.slot,sc); drawHist() }
@@ -1013,6 +1056,9 @@ const endDrag=()=>{ed.drag=null};
 $("edCanvas").addEventListener("pointerup",endDrag); $("edCanvas").addEventListener("pointercancel",endDrag);
 $("edCanvas").addEventListener("wheel",e=>{ if(!ed.p)return; e.preventDefault(); const c=ed.p.crop, f=Math.exp(e.deltaY*0.0015);
   c.w*=f;c.h*=f; clampCrop(ed.p); drawEditor() },{passive:false});
+function rememberOrientFor(p,quiet){ slotPrefs[p.slot]={rot:p.rot,flipH:p.flipH,flipV:p.flipV}; store.set("pa.slotPrefs",slotPrefs);
+  if(!quiet) toast(`Remembered for future ${SLOTS[p.slot].label.toLowerCase()} photos.`) }
+function forSel(fn){ const ps=selPhotos(); for(const p of ps) fn(p); const sc=board.clientWidth/SLIDE.w; for(const p of ps) drawTile(p.slot,sc); syncPanel(); return ps }
 function rememberOrient(){ const p=ed.p; slotPrefs[ed.slot]={rot:p.rot,flipH:p.flipH,flipV:p.flipV}; store.set("pa.slotPrefs",slotPrefs);
   toast(`Remembered for future ${SLOTS[ed.slot].label.toLowerCase()} photos.`) }
 $("edRot").onclick=()=>{const p=ed.p;p.rot=(p.rot+1)%4;autoCrop(p);rememberOrient();syncAngle();drawEditor()};
@@ -1024,6 +1070,17 @@ $("edAngle").addEventListener("input",e=>{ed.p.angle=+e.target.value;$("edAngleV
 $("edDone").onclick=closeEditor; $("edPrev").onclick=()=>stepEditor(-1); $("edNext").onclick=()=>stepEditor(1);
 $("edRemove").onclick=()=>{ if(ed.p) removePhoto(ed.p.id) };
 buildAdjPanel();
+let levelRaf=0;
+$("crop_level").addEventListener("input",e=>{ const v=+e.target.value; for(const p of selPhotos()){ p.angle=v; clampCrop(p) }
+  $("cropv_level").textContent=v.toFixed(1)+"°"; $("adjrow_level").classList.toggle("changed",v!==0);
+  if(!levelRaf) levelRaf=requestAnimationFrame(()=>{ levelRaf=0; redrawSelected() }) });
+for(const el of [$("crop_level"),$("adjrow_level").querySelector("label")]) el.addEventListener("dblclick",()=>forSel(p=>{ p.angle=0; clampCrop(p) }));
+$("cropIn").onclick=()=>forSel(p=>zoomCrop(p,0.92,0,0));
+$("cropOut").onclick=()=>forSel(p=>zoomCrop(p,1/0.92,0,0));
+$("cropAuto").onclick=()=>forSel(p=>autoCrop(p));
+$("cropRot").onclick=()=>{ const ps=forSel(p=>{ p.rot=(p.rot+1)%4; autoCrop(p); rememberOrientFor(p,true) }); if(ps.length===1) rememberOrientFor(ps[0]) };
+$("cropFlipH").onclick=()=>{ const ps=forSel(p=>{ p.flipH=!p.flipH; const {W}=frameSize(p); p.crop.cx=W-p.crop.cx; p.angle=-p.angle; rememberOrientFor(p,true) }); if(ps.length===1) rememberOrientFor(ps[0]) };
+$("cropFlipV").onclick=()=>{ const ps=forSel(p=>{ p.flipV=!p.flipV; const {H}=frameSize(p); p.crop.cy=H-p.crop.cy; p.angle=-p.angle; rememberOrientFor(p,true) }); if(ps.length===1) rememberOrientFor(ps[0]) };
 for(const b of document.querySelectorAll(".adj-pick button")) b.onclick=()=>{ const g=b.dataset.pick; if(g==="none") selectOnly(null); else selectGroup(g) };
 $("adjAuto").onclick=()=>{ for(const p of selPhotos()) p.adj=autoLevels(p); syncPanel(); redrawSelected() };
 $("adjReset").onclick=()=>{ for(const p of selPhotos()) p.adj={}; syncPanel(); redrawSelected() };
