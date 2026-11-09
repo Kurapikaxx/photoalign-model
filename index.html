@@ -57,7 +57,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,.slot:focus-visibl
 button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 button:disabled{opacity:.45;cursor:not-allowed}
 .board-wrap{background:var(--well);border-radius:var(--r);padding:14px;position:relative;overflow-x:auto}
-.board{position:relative;margin:0 auto;aspect-ratio:16/9;width:min(100%,calc((100vh - 300px)*16/9));min-width:min(100%,560px);max-width:100%;background:#000;transition:background .2s}
+.board{position:relative;margin:0 auto;user-select:none;aspect-ratio:16/9;width:min(100%,calc((100vh - 300px)*16/9));min-width:min(100%,560px);max-width:100%;background:#000;transition:background .2s}
 .slot{position:absolute;background:rgba(255,255,255,.06);outline:1px dashed rgba(255,255,255,.28);outline-offset:-1px;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .board.light .slot{background:rgba(0,0,0,.05);outline-color:rgba(0,0,0,.25)}
 .slot canvas{position:absolute;inset:0;width:100%;height:100%}
@@ -67,8 +67,12 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .slot.drop{outline:2px solid var(--accent)!important;outline-offset:-2px}
 .chip{position:absolute;left:4px;top:4px;font-family:var(--font-mono);font-size:10px;line-height:1;padding:3px 5px;border-radius:4px;background:rgba(0,0,0,.65);color:#fff;pointer-events:none;display:flex;gap:4px;align-items:center}
 .chip i{width:6px;height:6px;border-radius:50%;display:inline-block}
-.board-head{position:absolute;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
-.board.light .board-head{color:#111}
+.slot .rm{position:absolute;right:4px;top:4px;width:24px;height:24px;padding:0;border:0;border-radius:50%;background:rgba(0,0,0,.66);color:#fff;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .12s;z-index:2}
+.slot:hover .rm,.slot:focus-within .rm,.slot .rm:focus-visible{opacity:1}
+.tray .ti .rm{position:absolute;right:2px;top:2px;width:20px;height:20px;padding:0;border:0;border-radius:50%;background:rgba(0,0,0,.66);color:#fff;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center}
+@media (hover:none){.slot .rm{opacity:1}}
+.toast{display:flex;align-items:center;gap:12px}
+.toast .toast-act{background:transparent;color:inherit;border:1px solid currentColor;padding:4px 10px;font-size:12.5px}
 .drop-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
 .dropzone{border:2px dashed var(--line);border-radius:var(--r);padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--panel)}
 .dropzone.over{border-color:var(--accent);background:var(--accent-soft)}
@@ -87,7 +91,37 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .ed-bot{border-bottom:0;border-top:1px solid var(--line)}
 .ed-top h2{margin:0;font-size:16px;font-weight:700}
 .ed-top .sub{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
-.ed-stage{position:relative;min-height:0;background:#0a0b0e;touch-action:none}
+.ed-main{display:flex;min-height:0}
+.ed-stage{position:relative;flex:1;min-width:0;min-height:0;background:#0a0b0e;touch-action:none}
+.workspace{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
+.adj-panel{position:sticky;top:12px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 24px);overflow:auto}
+.adj-panel h2{margin:0;font-size:15px;font-weight:700}
+.adj-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.adj-sum{font-family:var(--font-mono);font-size:12px;color:var(--muted);text-align:right}
+.adj-pick{display:flex;flex-wrap:wrap;gap:6px}
+.adj-pick button{padding:4px 9px;font-size:12px;font-weight:500;border-radius:999px}
+.adj-panel.off #adjRows,.adj-panel.off .adj-btns,.adj-panel.off #edHist{opacity:.45}
+.adj-panel .hint{margin:0}
+.adj-panel h4{margin:6px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+#adjRows{display:flex;flex-direction:column;gap:6px}
+@media (max-width:1000px){.workspace{grid-template-columns:minmax(0,1fr)}.adj-panel{position:static;max-height:none}}
+.slot::after{content:"";position:absolute;inset:0;border:3px solid transparent;pointer-events:none;z-index:1}
+.slot.selected::after{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgba(255,255,255,.6)}
+.slot .crop{position:absolute;right:4px;bottom:4px;padding:3px 9px;border:0;border-radius:999px;background:rgba(0,0,0,.66);color:#fff;font-size:11.5px;font-weight:600;opacity:0;transition:opacity .12s;z-index:2}
+.slot:hover .crop,.slot.selected .crop,.slot:focus-within .crop{opacity:1}
+@media (hover:none){.slot .crop{opacity:1}}
+.ed-panel{width:300px;flex:none;overflow:auto;background:var(--panel);border-left:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.ed-panel h4{margin:6px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.adj-row{display:grid;grid-template-columns:82px 1fr 46px;align-items:center;gap:8px;font-size:12.5px}
+.adj-row label{cursor:pointer;user-select:none}
+.adj-row input[type=range]{width:100%;min-width:0;accent-color:var(--accent)}
+.adj-row output{font-family:var(--font-mono);font-size:11.5px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.adj-row.changed output{color:var(--ink)}
+.adj-btns{display:flex;gap:6px;flex-wrap:wrap}
+.adj-btns button{padding:6px 10px;font-size:12.5px}
+#edHist{width:100%;height:64px;background:var(--well);border-radius:4px;display:block}
+.ed-panel .hint{margin:0}
+@media (max-width:760px){.ed-main{flex-direction:column}.ed-panel{width:auto;max-height:42vh;border-left:0;border-top:1px solid var(--line)}}
 .ed-stage canvas{position:absolute;inset:0;width:100%;height:100%;cursor:move}
 .angle{display:flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;color:var(--muted)}
 .angle input{width:160px}
@@ -117,12 +151,6 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
   <div class="bar">
     <div class="field"><label for="patient">Patient</label><input type="text" id="patient" placeholder="Name or file number" autocomplete="off"></div>
     <div class="field"><label for="date">Date</label><input type="date" id="date"></div>
-    <div class="field"><label for="bgSel">Background</label>
-      <select id="bgSel"><option value="000000">Black</option><option value="1c1c1c">Charcoal</option><option value="ffffff">White</option></select></div>
-    <div class="field"><label for="gapSel">Spacing</label>
-      <select id="gapSel"><option value="0.06">Tight</option><option value="0.12" selected>Normal</option><option value="0.2">Wide</option></select></div>
-    <div class="field"><label for="headSel">Name on slide</label>
-      <select id="headSel"><option value="1">Show</option><option value="0">Hide</option></select></div>
     <div class="spacer"></div>
     <button id="clearBtn" type="button">Clear</button>
     <button id="photosBtn" type="button" class="primary" disabled>Save 9 photos</button>
@@ -134,7 +162,7 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
     <button type="button" class="primary" id="folderBtn">Open patient folder</button>
     <button type="button" id="addBtn">Add photos</button>
     <input type="file" id="fileIn" accept="image/*" multiple hidden>
-    <div class="msg" id="dzMsg">Or drop a patient folder or photos anywhere on this page. Click a slot to fix its crop; drag one slot onto another to swap.</div>
+    <div class="msg" id="dzMsg">Or drop a patient folder or photos anywhere on this page. Click a photo to select it for adjusting; double-click to crop. Drag one photo onto another to swap.</div>
     <div class="folder" id="folderBox" hidden>
       <span>Saving to <b id="folderName"></b></span>
       <select id="folderSub" aria-label="Records folder" hidden></select>
@@ -144,7 +172,24 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
     <div class="tray" id="tray"></div>
   </div>
 
-  <div class="board-wrap"><div class="board" id="board"></div></div>
+  <div class="workspace">
+    <div class="board-wrap"><div class="board" id="board"></div></div>
+    <aside class="adj-panel off" id="adjPanel" aria-label="Photo adjustments">
+      <div class="adj-top"><h2>Adjust</h2><span class="adj-sum" id="adjSummary">No photos selected</span></div>
+      <div class="adj-pick" role="group" aria-label="Select photos">
+        <button type="button" data-pick="all">All</button><button type="button" data-pick="io">Intra-orals</button><button type="button" data-pick="eo">Extra-orals</button><button type="button" data-pick="none">None</button>
+      </div>
+      <p class="hint">Click a photo to select it; Ctrl- or Shift-click to add more. Double-click a photo to crop it.</p>
+      <canvas id="edHist" width="256" height="64" aria-label="Histogram of the selected photo"></canvas>
+      <div class="adj-btns">
+        <button type="button" id="adjAuto" title="Set white and black points for each selected photo">Auto</button>
+        <button type="button" id="adjReset">Reset</button>
+        <button type="button" id="adjCompare" title="Hold to see the photos without adjustments">Hold to compare</button>
+      </div>
+      <div id="adjRows"></div>
+      <p class="hint">Double-click a slider to reset it. Adjustments go into every saved photo and collage.</p>
+    </aside>
+  </div>
 
   <div class="legend">
     <span><i style="background:var(--ok)"></i>Confident match</span>
@@ -162,15 +207,18 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
     <div class="field"><label for="edSlot">This photo is</label><select id="edSlot"></select></div>
     <button type="button" class="primary" id="edDone">Done</button>
   </div>
-  <div class="ed-stage" id="edStage"><canvas id="edCanvas"></canvas></div>
+  <div class="ed-main">
+    <div class="ed-stage" id="edStage"><canvas id="edCanvas"></canvas></div>
+  </div>
   <div class="ed-bot">
     <button type="button" id="edRot">Rotate 90°</button>
     <button type="button" id="edFlipH">Flip ↔</button>
     <button type="button" id="edFlipV">Flip ↕</button>
     <div class="angle"><label for="edAngle">Level</label><input type="range" id="edAngle" min="-15" max="15" step="0.1" value="0"><span id="edAngleVal">0.0°</span></div>
     <button type="button" id="edAuto">Auto-crop again</button>
+    <button type="button" id="edRemove" title="Take this photo off the collage (Delete key)">Remove photo</button>
     <div class="spacer"></div>
-    <span class="hint" id="edHint">Drag to move · corners to resize · scroll to zoom · arrow keys nudge · Enter for next</span>
+    <span class="hint" id="edHint">Drag to move · corners to resize · scroll to zoom · arrows nudge · Enter next · Delete removes</span>
   </div>
 </div>
 
@@ -183,7 +231,7 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 <div class="toast" id="toast" hidden></div>
 
 <script src="vendor/ort.min.js"></script>
-<script src="vendor/pptxgen.bundle.js"></script>
+<script src="vendor/jszip.min.js"></script>
 <script>
 "use strict";
 /* ============ CONFIG (tune here) ============ */
@@ -199,12 +247,15 @@ const SLOTS = {
   io_upper:         {label:"Upper occlusal",   group:"Intra-oral", aspect:4/3, kind:"occlusal"},
   io_lower:         {label:"Lower occlusal",   group:"Intra-oral", aspect:4/3, kind:"occlusal"},
 };
-// Slide layout: columns of rows of slot ids. Sized automatically to fill a 16:9 slide.
-const LAYOUT = [
-  [["eo_front","eo_front_smile"],["eo_profile","eo_profile_smile"]],
-  [["io_right","io_frontal","io_left"],["io_upper","io_lower"]],
-];
-const SLOT_ORDER = LAYOUT.flat(2);
+// Slide layout: the practice's Patient Card template, 10 x 7.5 in (inches). Replaced by the template's own
+// placeholder positions once it loads.
+let SLIDE = {w:10, h:7.5};
+let TEMPLATE_RECTS = {
+  eo_front:{x:0.002,y:0.001,w:1.875,h:2.496}, io_upper:{x:3.335,y:0.002,w:3.331,h:2.496}, eo_front_smile:{x:8.123,y:0.002,w:1.875,h:2.496},
+  io_right:{x:0.001,y:2.503,w:3.331,h:2.496}, io_frontal:{x:3.335,y:2.502,w:3.331,h:2.496}, io_left:{x:6.669,y:2.502,w:3.331,h:2.496},
+  eo_profile:{x:0.001,y:5.000,w:1.875,h:2.496}, io_lower:{x:3.335,y:5.002,w:3.331,h:2.496}, eo_profile_smile:{x:8.125,y:5.002,w:1.875,h:2.496},
+};
+const SLOT_ORDER = ["eo_front","io_upper","eo_front_smile","io_right","io_frontal","io_left","eo_profile","io_lower","eo_profile_smile"];
 // Auto-crop margins, as a fraction of the detected teeth box (intra-oral) — tuned from examples later.
 // Intra-oral crop rules, fitted to the practice's own crops (all 4:3)
 const CROP = {
@@ -235,7 +286,6 @@ let BLEND = {pos:0.7, size:0.6, byKind:{frontal:{pos:0.9,size:0.5},buccal:{pos:1
 let LEVEL_KINDS = [];   // tuning found your usual fixed angles beat automatic levelling
 const TEETH = {hueMin:17, hueMax:50, vRel:{frontal:0.78,buccal:0.78,occlusal:0.5}, vMin:0.42, maxLevel:18, keep:0.5, keepOcc:0.15, occSingle:true, dilate:{frontal:4,buccal:2,occlusal:5}};  // tuned on 185 cases
 const DEFAULT_ORIENT = {io_upper:{flipH:true}, io_lower:{flipV:true}};  // mirror shots, as the practice orients them
-const SLIDE = {w:13.333, h:7.5, margin:0.3, head:0.45};
 const SKIP_COST = 14;       // cost of leaving a photo out; high so empty slots always get filled
 const CONFIDENT = 0.85;
 const MAX_SIDE = 3200;      // photos are downscaled to this on load
@@ -252,13 +302,14 @@ const store = {
   set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 };
 let slotPrefs = store.get("pa.slotPrefs",{});
-let uiPrefs = store.get("pa.ui",{});
-if(uiPrefs.bg) $("bgSel").value=uiPrefs.bg;
-if(uiPrefs.gap) $("gapSel").value=uiPrefs.gap;
-if(uiPrefs.head) $("headSel").value=uiPrefs.head;
 $("date").value = new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10);
 
-function toast(msg,ms=3200){const t=$("toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,ms)}
+function toast(msg,ms=3200,action){
+  const t=$("toast"); t.innerHTML=""; const sp=document.createElement("span"); sp.textContent=msg; t.appendChild(sp);
+  if(action){ const b=document.createElement("button"); b.type="button"; b.className="toast-act"; b.textContent=action.label;
+    b.onclick=()=>{ t.hidden=true; action.fn() }; t.appendChild(b) }
+  t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,ms);
+}
 function setStatus(kind,text){$("statusDot").className="dot "+kind;$("statusText").textContent=text}
 
 /* ============ MODEL ============ */
@@ -583,24 +634,7 @@ function swapSlots(a,b){
 }
 
 /* ============ BOARD RENDER ============ */
-function computeLayout(gap){
-  // returns rects in slide inches for each slot + header box
-  const head = $("headSel").value==="1" ? SLIDE.head : 0;
-  const bw=SLIDE.w-2*SLIDE.margin, bh=SLIDE.h-2*SLIDE.margin-head;
-  const colW=(col,H)=>{ // width that makes rows sum to H
-    let inv=0, extra=0; for(const row of col){const sa=row.reduce((a,s)=>a+SLOTS[s].aspect,0); inv+=1/sa; extra+=(row.length-1)*gap/sa}
-    return (H-(col.length-1)*gap+extra)/inv; };
-  let H=bh, widths=LAYOUT.map(c=>colW(c,H)), tot=widths.reduce((a,b)=>a+b,0)+(LAYOUT.length-1)*gap;
-  for(let it=0;it<20&&tot>bw;it++){H*=bw/tot; widths=LAYOUT.map(c=>colW(c,H)); tot=widths.reduce((a,b)=>a+b,0)+(LAYOUT.length-1)*gap}
-  const x0=SLIDE.margin+(bw-tot)/2, y0=SLIDE.margin+head+(bh-H)/2, rects={};
-  let x=x0;
-  LAYOUT.forEach((col,ci)=>{ const cw=widths[ci]; let y=y0;
-    for(const row of col){ const sa=row.reduce((a,s)=>a+SLOTS[s].aspect,0), rh=(cw-(row.length-1)*gap)/sa;
-      const rw=row.reduce((a,s)=>a+SLOTS[s].aspect*rh,0)+(row.length-1)*gap; let xx=x+(cw-rw)/2;
-      for(const s of row){const w=SLOTS[s].aspect*rh; rects[s]={x:xx,y,w,h:rh}; xx+=w+gap} y+=rh+gap }
-    x+=cw+gap; });
-  return {rects, head:{x:x0,y:SLIDE.margin,w:tot,h:head}};
-}
+function computeLayout(){ return {rects:TEMPLATE_RECTS} }
 
 const slotEls={};
 function buildBoard(){
@@ -608,10 +642,18 @@ function buildBoard(){
   for(const s of SLOT_ORDER){
     const el=document.createElement("div"); el.className="slot"; el.tabIndex=0; el.dataset.slot=s;
     el.setAttribute("role","button"); el.setAttribute("aria-label",SLOTS[s].group+" "+SLOTS[s].label);
-    el.innerHTML=`<canvas></canvas><div class="ph">${SLOTS[s].group}<br>${SLOTS[s].label}</div><div class="chip" hidden></div>`;
+    el.innerHTML=`<canvas></canvas><div class="ph">${SLOTS[s].group}<br>${SLOTS[s].label}</div><div class="chip" hidden></div><button type="button" class="rm" aria-label="Remove ${SLOTS[s].group} ${SLOTS[s].label} photo" title="Remove from collage" hidden>×</button><button type="button" class="crop" hidden>Crop</button>`;
+    el.querySelector(".crop").addEventListener("click",e=>{ e.stopPropagation(); if(slotMap[s]) openEditor(s) });
+    el.querySelector(".crop").addEventListener("dblclick",e=>e.stopPropagation());
+    el.querySelector(".rm").addEventListener("click",e=>{ e.stopPropagation(); if(slotMap[s]) removePhoto(slotMap[s]) });
+    el.querySelector(".rm").addEventListener("keydown",e=>e.stopPropagation());
     el.draggable=true;
-    el.addEventListener("click",()=>{ if(slotMap[s]) openEditor(s); else $("fileIn").click() });
-    el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();el.click()}});
+    el.addEventListener("click",e=>{ const id=slotMap[s]; if(!id){ $("fileIn").click(); return }
+      if(e.ctrlKey||e.metaKey||e.shiftKey) toggleSel(id); else selectOnly(id) });
+    el.addEventListener("dblclick",()=>{ if(slotMap[s]) openEditor(s) });
+    el.addEventListener("keydown",e=>{ if(e.target!==el) return;
+      if(e.key==="Enter"){ e.preventDefault(); if(slotMap[s]) openEditor(s); else $("fileIn").click() }
+      else if(e.key===" "){ e.preventDefault(); if(slotMap[s]) toggleSel(slotMap[s]) } });
     el.addEventListener("dragstart",e=>{ if(!slotMap[s]){e.preventDefault();return} e.dataTransfer.setData("text/pa-slot",s); e.dataTransfer.effectAllowed="move"});
     el.addEventListener("dragover",e=>{ if(isInternal(e)){e.preventDefault();el.classList.add("drop")} });
     el.addEventListener("dragleave",()=>el.classList.remove("drop"));
@@ -621,37 +663,42 @@ function buildBoard(){
       else if(pid){placePhoto(photos.get(+pid),s,true);renderAll()} });
     board.appendChild(el); slotEls[s]=el;
   }
-  const hd=document.createElement("div"); hd.className="board-head"; hd.id="boardHead"; board.appendChild(hd);
 }
 function isInternal(e){const t=e.dataTransfer.types;return t.includes("text/pa-slot")||t.includes("text/pa-photo")}
 
+function drawTile(s,sc){
+  const p=photos.get(slotMap[s]), r=computeLayout().rects[s]; if(!p||!r) return;
+  sc=sc||board.clientWidth/SLIDE.w;
+  const cv=slotEls[s].querySelector("canvas"), dpr=window.devicePixelRatio||1, cw=Math.max(1,Math.round(r.w*sc*dpr)), ch=Math.max(1,Math.round(r.h*sc*dpr));
+  if(cv.width!==cw||cv.height!==ch){ cv.width=cw; cv.height=ch }
+  const x=cv.getContext("2d",{willReadFrequently:true}); x.fillStyle="#ffffff"; x.fillRect(0,0,cw,ch);
+  const k=displayScale(p); drawCrop(x,p,0,0,cw,ch,oriented(p,k),k);
+  if(!cmp&&!adjNeutral(p.adj)) applyAdjust(cv,p.adj);
+}
 function renderAll(){
-  const bg=$("bgSel").value, gap=+$("gapSel").value, L=computeLayout(gap);
-  board.style.background="#"+bg; board.classList.toggle("light",bg==="ffffff");
+  const bg="ffffff", L=computeLayout();
+  board.style.aspectRatio=`${SLIDE.w} / ${SLIDE.h}`; board.style.width=`min(100%, calc((100vh - 300px) * ${(SLIDE.w/SLIDE.h).toFixed(4)}))`;
+  board.style.background="#"+bg; board.classList.add("light");
   const bwpx=board.clientWidth, sc=bwpx/SLIDE.w;
   for(const s of SLOT_ORDER){
     const r=L.rects[s], el=slotEls[s];
     Object.assign(el.style,{left:r.x/SLIDE.w*100+"%",top:r.y/SLIDE.h*100+"%",width:r.w/SLIDE.w*100+"%",height:r.h/SLIDE.h*100+"%"});
     const p=photos.get(slotMap[s]); const cv=el.querySelector("canvas"), chip=el.querySelector(".chip"), ph=el.querySelector(".ph");
-    el.classList.toggle("filled",!!p); ph.hidden=!!p; chip.hidden=!p; cv.hidden=!p;
+    el.classList.toggle("filled",!!p); ph.hidden=!!p; chip.hidden=!p; cv.hidden=!p; el.querySelector(".rm").hidden=!p; el.querySelector(".crop").hidden=!p;
+    el.classList.toggle("selected",!!p&&sel.has(p.id));
     if(p){
-      const dpr=window.devicePixelRatio||1, cw=Math.max(1,Math.round(r.w*sc*dpr)), ch=Math.max(1,Math.round(r.h*sc*dpr));
-      cv.width=cw; cv.height=ch; const x=cv.getContext("2d"); x.fillStyle="#"+bg; x.fillRect(0,0,cw,ch);
-      const k=displayScale(p); x.save(); x.scale(1,1); drawCrop(x,p,0,0,cw,ch,oriented(p,k),k); x.restore();
+      drawTile(s,sc);
       const pr=p.eff?p.eff[s]:null;
       const col=p.locked||pr==null?"var(--muted)":pr>=CONFIDENT?"var(--ok)":"var(--warn)";
       chip.innerHTML=`<i style="background:${col}"></i>${p.locked?"placed":pr==null?"name":Math.round(pr*100)+"%"}`;
     }
   }
-  const hd=$("boardHead"); const show=$("headSel").value==="1";
-  hd.hidden=!show; hd.textContent=headText();
-  Object.assign(hd.style,{left:L.head.x/SLIDE.w*100+"%",top:L.head.y/SLIDE.h*100+"%",width:L.head.w/SLIDE.w*100+"%",fontSize:(0.22*sc)+"px",lineHeight:(L.head.h*sc*0.8)+"px"});
-  renderTray();
+  renderTray(); refreshSel();
   const any=SLOT_ORDER.some(s=>slotMap[s]);
   $("pptxBtn").disabled=!any; $("jpgBtn").disabled=!any; $("photosBtn").disabled=!any;
   const n=SLOT_ORDER.filter(s=>slotMap[s]).length;
-  $("dzMsg").textContent = photos.size? `${n} of 9 slots filled. Click a slot to fix its crop; drag one slot onto another to swap.` :
-    "Or drop a patient folder or photos anywhere on this page. Click a slot to fix its crop; drag one slot onto another to swap.";
+  $("dzMsg").textContent = photos.size? `${n} of 9 slots filled. Click a photo to select it for adjusting; double-click to crop. Drag one photo onto another to swap.` :
+    "Or drop a patient folder or photos anywhere on this page. Click a photo to select it for adjusting; double-click to crop. Drag one photo onto another to swap.";
 }
 function headText(){const n=$("patient").value.trim(), d=$("date").value;
   let ds=""; if(d){const [y,m,dd]=d.split("-");ds=`${dd}/${m}/${y}`} return [n||"Patient",ds].filter(Boolean).join("   ·   ")}
@@ -663,9 +710,178 @@ function renderTray(){
     const c=document.createElement("canvas"); c.width=168;c.height=128; const x=c.getContext("2d");
     const s=Math.max(168/p.src.width,128/p.src.height); x.drawImage(p.src,(168-p.src.width*s)/2,(128-p.src.height*s)/2,p.src.width*s,p.src.height*s);
     el.appendChild(c);
+    const rm=document.createElement("button"); rm.type="button"; rm.className="rm"; rm.textContent="×"; rm.title="Remove from collage";
+    rm.setAttribute("aria-label","Remove "+p.name); rm.onclick=e=>{ e.stopPropagation(); removePhoto(p.id) }; el.appendChild(rm);
     el.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/pa-photo",String(p.id));e.dataTransfer.effectAllowed="move"});
     t.appendChild(el);
   }
+}
+
+/* ============ ADJUSTMENTS ============ */
+// key, label, min, max, step, group
+const ADJ = [
+  ["exposure","Exposure",-2,2,0.05,"Light"], ["contrast","Contrast",-100,100,1,"Light"],
+  ["highlights","Highlights",-100,100,1,"Light"], ["shadows","Shadows",-100,100,1,"Light"],
+  ["whites","Whites",-100,100,1,"Light"], ["blacks","Blacks",-100,100,1,"Light"],
+  ["temp","Temperature",-100,100,1,"Colour"], ["tint","Tint",-100,100,1,"Colour"],
+  ["vibrance","Vibrance",-100,100,1,"Colour"], ["saturation","Saturation",-100,100,1,"Colour"],
+];
+function adjNeutral(a){ return !a || ADJ.every(([k])=>!a[k]) }
+function adjKey(a){ return adjNeutral(a) ? "" : ADJ.map(([k])=>a[k]||0).join(",") }
+function smoothstep(e0,e1,x){ const t=Math.min(1,Math.max(0,(x-e0)/(e1-e0))); return t*t*(3-2*t) }
+// Tone curve on luminance: exposure (stops), white/black points, highlights/shadows, then an S-curve for contrast
+function toneLUT(a){
+  const N=2048, L=new Float32Array(N+1);
+  const ex=Math.pow(2,a.exposure||0), wp=1-0.15*(a.whites||0)/100, bp=-0.08*(a.blacks||0)/100;
+  const h=(a.highlights||0)/100, s=(a.shadows||0)/100, pc=Math.pow(2,1.3*(a.contrast||0)/100);
+  for(let i=0;i<=N;i++){
+    let x=i/N*1.5;                                   // headroom for warm/cool shifts above 1
+    x*=ex; x=(x-bp)/(wp-bp); x=Math.min(1,Math.max(0,x));
+    const wh=smoothstep(0.45,1,x), ws=1-smoothstep(0,0.55,x);
+    x+=h*0.4*wh*(h>0?1-x:x); x+=s*0.4*ws*(s>0?1-x:x);
+    x=Math.min(1,Math.max(0,x));
+    x = x<0.5 ? 0.5*Math.pow(2*x,pc) : 1-0.5*Math.pow(2-2*x,pc);
+    L[i]=x;
+  }
+  return L;
+}
+function applyAdjust(canvas,a){
+  if(adjNeutral(a)||!canvas.width||!canvas.height) return;
+  const ctx=canvas.getContext("2d",{willReadFrequently:true}), im=ctx.getImageData(0,0,canvas.width,canvas.height), d=im.data;
+  const L=toneLUT(a), N=L.length-1;
+  const t=(a.temp||0)/100, ti=(a.tint||0)/100;
+  let rm=1+0.2*t, gm=1-0.14*ti, bm=1-0.2*t; const norm=0.2126*rm+0.7152*gm+0.0722*bm; rm/=norm; gm/=norm; bm/=norm;
+  const sat=1+(a.saturation||0)/100, vib=(a.vibrance||0)/100;
+  for(let i=0;i<d.length;i+=4){
+    let r=d[i]*rm/255, g=d[i+1]*gm/255, b=d[i+2]*bm/255;
+    const Y=0.2126*r+0.7152*g+0.0722*b, Y2=L[Math.min(N,Math.round(Y/1.5*N))];
+    if(Y>1e-5){ const k=Y2/Y; r*=k; g*=k; b*=k } else { r=g=b=Y2 }
+    const mx=Math.max(r,g,b), mn=Math.min(r,g,b), s0=mx>0?(mx-mn)/mx:0, f=sat*(1+vib*(1-s0));
+    if(f!==1){ r=Y2+(r-Y2)*f; g=Y2+(g-Y2)*f; b=Y2+(b-Y2)*f }
+    d[i]=r<0?0:r>1?255:r*255; d[i+1]=g<0?0:g>1?255:g*255; d[i+2]=b<0?0:b>1?255:b*255;
+  }
+  ctx.putImageData(im,0,0);
+}
+// Auto: set white and black points from the cropped area (0.5% and 99.5% of brightness)
+function autoLevels(p){
+  const w=240, h=Math.max(1,Math.round(240*p.crop.h/p.crop.w)), c=document.createElement("canvas"); c.width=w; c.height=h;
+  const x=c.getContext("2d",{willReadFrequently:true}); drawCrop(x,p,0,0,w,h,oriented(p,displayScale(p)),1);
+  const d=x.getImageData(0,0,w,h).data, ys=new Float32Array(w*h);
+  for(let i=0,j=0;i<d.length;i+=4,j++) ys[j]=(0.2126*d[i]+0.7152*d[i+1]+0.0722*d[i+2])/255;
+  ys.sort(); const lo=ys[Math.floor(ys.length*0.005)], hi=ys[Math.floor(ys.length*0.995)];
+  const wp=Math.min(1,Math.max(0.55,hi/0.97)), bp=(lo-0.02*wp)/0.98, cl=v=>Math.round(Math.max(-100,Math.min(100,v)));
+  return Object.assign({},p.adj||{},{exposure:0,whites:cl((1-wp)/0.15*100),blacks:cl(-bp/0.08*100)});
+}
+
+/* ============ REMOVING PHOTOS ============ */
+let lastRemoved=null;
+function removePhoto(id){
+  const p=photos.get(id); if(!p) return;
+  const slot=p.slot; if(slot&&slotMap[slot]===id) slotMap[slot]=null;
+  photos.delete(id); sel.delete(id); lastRemoved={p,slot};
+  if(ed.p===p) closeEditor(); else renderAll();
+  toast(`Removed ${p.name} from the collage. The file itself is untouched.`,7000,{label:"Undo",fn:()=>{
+    if(!lastRemoved||lastRemoved.p!==p) return;
+    photos.set(p.id,p); p.slot=null;
+    if(slot&&!slotMap[slot]){ slotMap[slot]=p.id; p.slot=slot }
+    lastRemoved=null; renderAll();
+  }});
+}
+
+/* ============ TEMPLATE ============ */
+// The collage is built from the practice's own PowerPoint (Patient Card). Its picture placeholders,
+// labelled Front, Upper, Front-Smile, Right, Frontal, Left, Profile, Lower, Profile- Smile, set the layout.
+const TEMPLATE_URL = "template/patient-card.pptx";
+const NS = {p:"http://schemas.openxmlformats.org/presentationml/2006/main", a:"http://schemas.openxmlformats.org/drawingml/2006/main",
+  r:"http://schemas.openxmlformats.org/officeDocument/2006/relationships", rel:"http://schemas.openxmlformats.org/package/2006/relationships"};
+const VIEW_SLOT = {Front:"eo_front","Front-Smile":"eo_front_smile",Profile:"eo_profile","Profile-Smile":"eo_profile_smile",
+  Frontal:"io_frontal",Right:"io_right",Left:"io_left",Upper:"io_upper",Lower:"io_lower"};
+const VIEW_OF = Object.fromEntries(Object.entries(VIEW_SLOT).map(([v,s])=>[s,v]));
+const VIEW_KEYS = {front:"Front",frontsmile:"Front-Smile",profile:"Profile",profilesmile:"Profile-Smile",frontal:"Frontal",right:"Right",left:"Left",upper:"Upper",lower:"Lower"};
+let TPL=null;
+function xmlDoc(s){ return new DOMParser().parseFromString(s,"application/xml") }
+function relTarget(relsDoc,pred){ for(const r of relsDoc.getElementsByTagNameNS(NS.rel,"Relationship")) if(pred(r)) return r.getAttribute("Target"); return null }
+function resolvePath(base,target){ const parts=base.split("/").slice(0,-1); for(const t of target.split("/")){ if(t==="..") parts.pop(); else if(t&&t!==".") parts.push(t) } return parts.join("/") }
+function relsPathFor(part){ const i=part.lastIndexOf("/"); return part.slice(0,i)+"/_rels/"+part.slice(i+1)+".rels" }
+function picPlaceholders(doc){
+  const out=[];
+  for(const sp of doc.getElementsByTagNameNS(NS.p,"sp")){
+    const ph=sp.getElementsByTagNameNS(NS.p,"ph")[0]; if(!ph||ph.getAttribute("type")!=="pic") continue;
+    const off=sp.getElementsByTagNameNS(NS.a,"off")[0], ext=sp.getElementsByTagNameNS(NS.a,"ext");
+    const e=[...ext].find(n=>n.hasAttribute("cx"));
+    const text=[...sp.getElementsByTagNameNS(NS.a,"t")].map(t=>t.textContent).join(" ");
+    out.push({sp, idx:ph.getAttribute("idx")||"0", text,
+      rect: off&&e ? {x:+off.getAttribute("x"),y:+off.getAttribute("y"),w:+e.getAttribute("cx"),h:+e.getAttribute("cy")} : null});
+  }
+  return out;
+}
+async function fetchTemplateBytes(){
+  const r=await fetch(TEMPLATE_URL); if(!r.ok) throw new Error("template "+r.status);
+  if(TEMPLATE_URL.endsWith(".b64.txt")){ const bin=atob((await r.text()).trim()), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u }
+  return new Uint8Array(await r.arrayBuffer());
+}
+async function parseTemplate(bytes){
+  const zip=await JSZip.loadAsync(bytes);
+  const pres=xmlDoc(await zip.file("ppt/presentation.xml").async("string"));
+  const sz=pres.getElementsByTagNameNS(NS.p,"sldSz")[0];
+  const firstRid=pres.getElementsByTagNameNS(NS.p,"sldId")[0].getAttributeNS(NS.r,"id");
+  const presRels=xmlDoc(await zip.file("ppt/_rels/presentation.xml.rels").async("string"));
+  const slidePath=resolvePath("ppt/presentation.xml",relTarget(presRels,r=>r.getAttribute("Id")===firstRid));
+  const relsPath=relsPathFor(slidePath);
+  const slideRels=xmlDoc(await zip.file(relsPath).async("string"));
+  const layoutPath=resolvePath(slidePath,relTarget(slideRels,r=>/\/slideLayout$/.test(r.getAttribute("Type"))));
+  const layout=picPlaceholders(xmlDoc(await zip.file(layoutPath).async("string")));
+  const slide=picPlaceholders(xmlDoc(await zip.file(slidePath).async("string")));
+  const slots={};
+  for(const lp of layout){
+    const view=VIEW_KEYS[lp.text.toLowerCase().replace(/[^a-z]/g,"")]; if(!view) continue;
+    const own=slide.find(s=>s.idx===lp.idx), rect=(own&&own.rect)||lp.rect; if(!rect) continue;
+    slots[VIEW_SLOT[view]]={idx:lp.idx,...rect};
+  }
+  if(Object.keys(slots).length<9) throw new Error(`the template has ${Object.keys(slots).length} of the 9 labelled picture placeholders`);
+  return {bytes,slidePath,relsPath,cx:+sz.getAttribute("cx"),cy:+sz.getAttribute("cy"),slots};
+}
+async function loadTemplate(){
+  try{
+    TPL=await parseTemplate(await fetchTemplateBytes());
+    const E=914400; SLIDE={w:TPL.cx/E,h:TPL.cy/E};
+    for(const [s,t] of Object.entries(TPL.slots)){
+      TEMPLATE_RECTS[s]={x:t.x/E,y:t.y/E,w:t.w/E,h:t.h/E};
+      const a=t.w/t.h; if(Math.abs(a-SLOTS[s].aspect)>0.01){ SLOTS[s].aspect=a; const p=photos.get(slotMap[s]); if(p) autoCrop(p) }
+    }
+    renderAll();
+  }catch(e){ console.warn(e); toast("Couldn't read the Patient Card template: "+e.message+". The PowerPoint button won't work.",8000) }
+}
+async function buildPptx(){
+  if(!TPL) throw new Error("the Patient Card template isn't loaded");
+  const zip=await JSZip.loadAsync(TPL.bytes), S=new XMLSerializer(), DECL='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+  const slideDoc=xmlDoc(await zip.file(TPL.slidePath).async("string")), relsDoc=xmlDoc(await zip.file(TPL.relsPath).async("string"));
+  let ct=await zip.file("[Content_Types].xml").async("string");
+  if(!/Extension="jpeg"/i.test(ct)) ct=ct.replace(/(<Types[^>]*>)/,'$1<Default Extension="jpeg" ContentType="image/jpeg"/>');
+  zip.file("[Content_Types].xml",ct);
+  const tree=slideDoc.getElementsByTagNameNS(NS.p,"spTree")[0];
+  let maxId=0; for(const e of slideDoc.getElementsByTagNameNS(NS.p,"cNvPr")) maxId=Math.max(maxId,+e.getAttribute("id")||0);
+  const byIdx={}; for(const ph of picPlaceholders(slideDoc)) byIdx[ph.idx]=ph.sp;
+  let n=0;
+  for(const s of SLOT_ORDER){
+    const p=photos.get(slotMap[s]), t=TPL.slots[s]; if(!p||!t) continue;
+    const r=TEMPLATE_RECTS[s], url=cropToJpeg(p,r.w,r.h), bin=atob(url.split(",")[1]), u=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i);
+    n++; zip.file(`ppt/media/photoalign_${n}.jpeg`,u);
+    const rel=relsDoc.createElementNS(NS.rel,"Relationship");
+    rel.setAttribute("Id","rIdPA"+n); rel.setAttribute("Type","http://schemas.openxmlformats.org/officeDocument/2006/relationships/image");
+    rel.setAttribute("Target",`../media/photoalign_${n}.jpeg`); relsDoc.documentElement.appendChild(rel);
+    const view=VIEW_OF[s];
+    const pic=xmlDoc(`<p:pic xmlns:p="${NS.p}" xmlns:a="${NS.a}" xmlns:r="${NS.r}"><p:nvPicPr><p:cNvPr id="${++maxId}" name="${view}" descr="${view}"/><p:cNvPicPr><a:picLocks noGrp="1" noChangeAspect="1"/></p:cNvPicPr><p:nvPr><p:ph type="pic" sz="quarter" idx="${t.idx}"/></p:nvPr></p:nvPicPr><p:blipFill><a:blip r:embed="rIdPA${n}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${t.x}" y="${t.y}"/><a:ext cx="${t.w}" cy="${t.h}"/></a:xfrm></p:spPr></p:pic>`).documentElement;
+    const node=slideDoc.importNode(pic,true), old=byIdx[t.idx];
+    if(old) tree.replaceChild(node,old); else tree.appendChild(node);
+  }
+  zip.file(TPL.slidePath,DECL+S.serializeToString(slideDoc).replace(/^<\?xml[^>]*>\s*/,""));
+  zip.file(TPL.relsPath,DECL+S.serializeToString(relsDoc).replace(/^<\?xml[^>]*>\s*/,""));
+  // copy files only (no folder entries: OneDrive and SharePoint refuse decks that have them), content types first
+  const out=new JSZip(), names=Object.keys(zip.files).filter(n=>!zip.files[n].dir).sort((x,y)=>(y==="[Content_Types].xml")-(x==="[Content_Types].xml"));
+  for(const n of names) out.file(n,await zip.files[n].async("uint8array"),{createFolders:false});
+  return out.generateAsync({type:"blob",mimeType:"application/vnd.openxmlformats-officedocument.presentationml.presentation",compression:"DEFLATE"});
 }
 
 /* ============ EDITOR ============ */
@@ -695,7 +911,7 @@ function drawEditor(){
   const x=cv.getContext("2d"); x.setTransform(dpr,0,0,dpr,0,0); x.clearRect(0,0,cw,chh);
   x.save(); x.translate(ox,oy); x.scale(s,s);
   x.translate(W/2,H/2); x.rotate(p.angle*Math.PI/180); x.translate(-W/2,-H/2);
-  x.drawImage(oriented(p,displayScale(p)),0,0,W,H); x.restore();
+  x.drawImage(editorSource(p),0,0,W,H); x.restore();
   const c=p.crop, rx=ox+(c.cx-c.w/2)*s, ry=oy+(c.cy-c.h/2)*s, rw=c.w*s, rh=c.h*s;
   x.fillStyle="rgba(0,0,0,.55)"; x.beginPath(); x.rect(0,0,cw,chh); x.rect(rx,ry,rw,rh); x.fill("evenodd");
   x.strokeStyle="#fff"; x.lineWidth=1.5; x.strokeRect(rx,ry,rw,rh);
@@ -704,6 +920,79 @@ function drawEditor(){
   // midline guide for occlusal levelling
   x.strokeStyle="rgba(134,166,255,.6)"; x.setLineDash([6,5]); x.beginPath(); x.moveTo(rx+rw/2,ry); x.lineTo(rx+rw/2,ry+rh); x.stroke(); x.setLineDash([]);
   x.fillStyle="#fff"; for(const [hx,hy] of [[rx,ry],[rx+rw,ry],[rx,ry+rh],[rx+rw,ry+rh]]) x.fillRect(hx-6,hy-6,12,12);
+}
+// Adjusted copy of the photo for the editor (preview size), cached until the adjustments change
+function editorSource(p){
+  const base=oriented(p,displayScale(p)); if(cmp||adjNeutral(p.adj)) return base;
+  const key=p.cacheKey+"|"+adjKey(p.adj); if(p.adjCache&&p.adjCacheKey===key) return p.adjCache;
+  const sc=Math.min(1,1400/Math.max(base.width,base.height)), c=document.createElement("canvas");
+  c.width=Math.round(base.width*sc); c.height=Math.round(base.height*sc); c.getContext("2d",{willReadFrequently:true}).drawImage(base,0,0,c.width,c.height);
+  applyAdjust(c,p.adj); p.adjCache=c; p.adjCacheKey=key; return c;
+}
+function drawHist(){
+  const hc=$("edHist"), hx=hc.getContext("2d"), HW=hc.width, HH=hc.height; hx.clearRect(0,0,HW,HH);
+  const p=photos.get(primary); if(!p||!p.crop) return;
+  const w=200, h=Math.max(1,Math.round(200*p.crop.h/p.crop.w)), c=document.createElement("canvas"); c.width=w; c.height=h;
+  const x=c.getContext("2d",{willReadFrequently:true}); drawCrop(x,p,0,0,w,h,oriented(p,displayScale(p)),1);
+  if(!cmp) applyAdjust(c,p.adj);
+  const d=x.getImageData(0,0,w,h).data, R=new Float32Array(64), G=new Float32Array(64), B=new Float32Array(64), Y=new Float32Array(64);
+  for(let i=0;i<d.length;i+=4){ R[d[i]>>2]++; G[d[i+1]>>2]++; B[d[i+2]>>2]++; Y[(0.2126*d[i]+0.7152*d[i+1]+0.0722*d[i+2])>>2]++ }
+  const mx=Math.max(...Y.slice(1,63),...R.slice(1,63),1);
+  const plot=(arr,col)=>{ hx.fillStyle=col; hx.beginPath(); hx.moveTo(0,HH);
+    for(let i=0;i<64;i++) hx.lineTo(i/63*HW, HH-Math.min(1,arr[i]/mx)*(HH-2)); hx.lineTo(HW,HH); hx.closePath(); hx.fill() };
+  plot(Y,"rgba(140,150,165,.55)");
+  hx.globalCompositeOperation="lighter"; plot(R,"rgba(220,60,60,.45)"); plot(G,"rgba(60,180,90,.45)"); plot(B,"rgba(70,110,230,.45)");
+  hx.globalCompositeOperation="source-over";
+}
+function fmtAdj(k,v){ return k==="exposure" ? (v>0?"+":"")+v.toFixed(2) : (v>0?"+":"")+Math.round(v) }
+function buildAdjPanel(){
+  const host=$("adjRows"); let grp="";
+  for(const [k,label,mn,mx,st,g] of ADJ){
+    if(g!==grp){ const h=document.createElement("h4"); h.textContent=g; host.appendChild(h); grp=g }
+    const row=document.createElement("div"); row.className="adj-row"; row.id="adjrow_"+k;
+    row.innerHTML=`<label for="adj_${k}" title="Double-click to reset">${label}</label><input type="range" id="adj_${k}" min="${mn}" max="${mx}" step="${st}" value="0"><output id="adjv_${k}" for="adj_${k}">0</output>`;
+    host.appendChild(row);
+    const inp=row.querySelector("input");
+    inp.addEventListener("input",()=>setAdj(k,+inp.value));
+    for(const el of [inp,row.querySelector("label")]) el.addEventListener("dblclick",()=>setAdj(k,0));
+  }
+}
+/* selection: which photos the side panel adjusts */
+const sel=new Set(); let primary=null, cmp=false;
+function selPhotos(){ return [...sel].map(id=>photos.get(id)).filter(p=>p&&p.slot) }
+function selectOnly(id){ sel.clear(); if(id!=null) sel.add(id); primary=id; refreshSel() }
+function toggleSel(id){ if(sel.has(id)){ sel.delete(id); if(primary===id) primary=[...sel].pop() ?? null } else { sel.add(id); primary=id } refreshSel() }
+function selectGroup(g){
+  sel.clear();
+  for(const s of SLOT_ORDER){ const id=slotMap[s]; if(!id) continue; const eo=SLOTS[s].kind==="eo"; if(g==="all"||(g==="io"&&!eo)||(g==="eo"&&eo)) sel.add(id) }
+  primary=[...sel][0] ?? null; refreshSel();
+}
+function refreshSel(){
+  for(const id of [...sel]){ const p=photos.get(id); if(!p||!p.slot) sel.delete(id) }
+  if(primary==null||!sel.has(primary)) primary=[...sel][0] ?? null;
+  for(const s of SLOT_ORDER) slotEls[s].classList.toggle("selected",!!slotMap[s]&&sel.has(slotMap[s]));
+  syncPanel();
+}
+function syncPanel(){
+  const ps=selPhotos(), n=ps.length;
+  $("adjSummary").textContent = !n ? "No photos selected" : n===1 ? `${SLOTS[ps[0].slot].group} ${SLOTS[ps[0].slot].label.toLowerCase()}` : `${n} photos selected`;
+  $("adjPanel").classList.toggle("off",!n);
+  for(const [k] of ADJ){
+    const vals=ps.map(p=>(p.adj&&p.adj[k])||0), same=vals.every(v=>v===vals[0]), v=n?vals[0]:0;
+    const inp=$("adj_"+k); inp.disabled=!n; inp.value=same?v:0;
+    $("adjv_"+k).textContent = !n ? "" : same ? fmtAdj(k,v) : "mixed";
+    $("adjrow_"+k).classList.toggle("changed",n>0&&(!same||v!==0));
+  }
+  for(const id of ["adjAuto","adjReset","adjCompare"]) $(id).disabled=!n;
+  drawHist();
+}
+function redrawSelected(){ const sc=board.clientWidth/SLIDE.w; for(const p of selPhotos()) drawTile(p.slot,sc); drawHist() }
+let adjRaf=0;
+function setAdj(k,v){
+  const ps=selPhotos(); if(!ps.length) return;
+  for(const p of ps) p.adj=Object.assign({},p.adj||{},{[k]:v});
+  $("adj_"+k).value=v; $("adjv_"+k).textContent=fmtAdj(k,v); $("adjrow_"+k).classList.toggle("changed",!!v);
+  if(!adjRaf) adjRaf=requestAnimationFrame(()=>{ adjRaf=0; redrawSelected() });
 }
 function toFrame(e){const r=$("edCanvas").getBoundingClientRect(),v=ed.view;return{x:(e.clientX-r.left-v.ox)/v.s,y:(e.clientY-r.top-v.oy)/v.s}}
 $("edCanvas").addEventListener("pointerdown",e=>{
@@ -733,6 +1022,14 @@ $("edAuto").onclick=()=>{autoCrop(ed.p);syncAngle();drawEditor()};
 function syncAngle(){$("edAngle").value=ed.p.angle;$("edAngleVal").textContent=ed.p.angle.toFixed(1)+"°"}
 $("edAngle").addEventListener("input",e=>{ed.p.angle=+e.target.value;$("edAngleVal").textContent=ed.p.angle.toFixed(1)+"°";drawEditor()});
 $("edDone").onclick=closeEditor; $("edPrev").onclick=()=>stepEditor(-1); $("edNext").onclick=()=>stepEditor(1);
+$("edRemove").onclick=()=>{ if(ed.p) removePhoto(ed.p.id) };
+buildAdjPanel();
+for(const b of document.querySelectorAll(".adj-pick button")) b.onclick=()=>{ const g=b.dataset.pick; if(g==="none") selectOnly(null); else selectGroup(g) };
+$("adjAuto").onclick=()=>{ for(const p of selPhotos()) p.adj=autoLevels(p); syncPanel(); redrawSelected() };
+$("adjReset").onclick=()=>{ for(const p of selPhotos()) p.adj={}; syncPanel(); redrawSelected() };
+const cmpOn=e=>{ if(!selPhotos().length) return; e.preventDefault(); cmp=true; redrawSelected() }, cmpOff=()=>{ if(!cmp) return; cmp=false; redrawSelected() };
+$("adjCompare").addEventListener("pointerdown",cmpOn); for(const ev of ["pointerup","pointerleave","pointercancel","blur"]) $("adjCompare").addEventListener(ev,cmpOff);
+$("adjCompare").addEventListener("keydown",e=>{ if(e.key===" "||e.key==="Enter") cmpOn(e) }); $("adjCompare").addEventListener("keyup",cmpOff);
 $("edSlot").addEventListener("change",e=>{ const to=e.target.value; if(to===ed.slot) return; swapSlots(ed.slot,to); openEditor(to) });
 document.addEventListener("keydown",e=>{
   if($("editor").hidden||!ed.p) return;
@@ -741,6 +1038,7 @@ document.addEventListener("keydown",e=>{
   const mv={ArrowLeft:[-st,0],ArrowRight:[st,0],ArrowUp:[0,-st],ArrowDown:[0,st]}[e.key];
   if(mv){e.preventDefault();c.cx+=mv[0];c.cy+=mv[1];clampCrop(ed.p);drawEditor()}
   else if(e.key==="Enter"){e.preventDefault();stepEditor(1)}
+  else if(e.key==="Delete"){e.preventDefault();removePhoto(ed.p.id)}
   else if(e.key==="Escape"){closeEditor()}
   else if(e.key==="+"||e.key==="="){c.w*=0.96;c.h*=0.96;clampCrop(ed.p);drawEditor()}
   else if(e.key==="-"){c.w/=0.96;c.h/=0.96;clampCrop(ed.p);drawEditor()}
@@ -752,17 +1050,32 @@ function fileBase(){const n=($("patient").value.trim()||"Patient").replace(/[\\/
 function cropToJpeg(p,wIn,hIn){ // ~300dpi, never upscaled past the source crop
   const {W,H}=frameSize(p); const maxW=Math.min(p.crop.w,wIn*300), w=Math.round(maxW), h=Math.round(maxW*hIn/wIn);
   const c=document.createElement("canvas"); c.width=w; c.height=h; const x=c.getContext("2d");
-  x.fillStyle="#"+$("bgSel").value; x.fillRect(0,0,w,h);
+  x.fillStyle="#ffffff"; x.fillRect(0,0,w,h);
   const full=document.createElement("canvas"); full.width=W; full.height=H; const fx=full.getContext("2d");
   fx.translate(W/2,H/2); fx.scale(p.flipH?-1:1,p.flipV?-1:1); fx.rotate(p.rot*Math.PI/2); fx.drawImage(p.src,-p.src.width/2,-p.src.height/2);
-  drawCrop(x,p,0,0,w,h,full,1); return c.toDataURL("image/jpeg",0.92);
+  drawCrop(x,p,0,0,w,h,full,1); applyAdjust(c,p.adj); return c.toDataURL("image/jpeg",0.92);
 }
 const JPEG_Q = 0.95;          // quality of the separate photos
 const SLOT_FILE = {eo_front:"Front", eo_front_smile:"Front-Smile", eo_profile:"Profile", eo_profile_smile:"Profile-Smile",
                    io_frontal:"Frontal", io_right:"Right", io_left:"Left", io_upper:"Upper", io_lower:"Lower"};
-function download(filename,blob){
+// Download one file: through Claude's save dialog when running inside Claude, otherwise the browser's normal download
+let dlPromise=null;
+function getDownloads(){
+  if(!dlPromise) dlPromise=Promise.resolve(null);   // outside Claude: normal browser downloads
+  return dlPromise;
+}
+async function download(filename,blob){
+  const dl=await getDownloads();
+  if(dl){ try{ await dl.save({filename,data:blob}); return true }catch(e){ if(e&&e.code!=="declined") toast(`Couldn't save ${filename}: ${e&&e.message||"unavailable here"}`,5000); return false } }
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=filename; document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000); return true;
+}
+// Folder access: available in Edge/Chrome; refused inside some embedded views, which then fall back to downloads
+let folderBlocked=false;
+async function pickFolder(id){
+  if(!FS_OK||folderBlocked) return {fallback:true};
+  try{ return {dir:await showDirectoryPicker({id,mode:"readwrite"})} }
+  catch(e){ if(e.name==="AbortError") return {cancelled:true}; folderBlocked=true; $("folderBtn").hidden=true; return {fallback:true} }
 }
 function confirmDialog(title,text,items,yes="Replace"){
   return new Promise(res=>{
@@ -800,16 +1113,23 @@ async function renderCropFull(p){
   const ow=Math.max(1,Math.round(p.crop.w*f)), oh=Math.max(1,Math.round(p.crop.h*f));
   const c=document.createElement("canvas"); c.width=ow; c.height=oh; const x=c.getContext("2d");
   x.fillStyle="#000"; x.fillRect(0,0,ow,oh); x.imageSmoothingQuality="high";
-  drawCrop(x,p,0,0,ow,oh,full,1);
+  drawCrop(x,p,0,0,ow,oh,full,1); applyAdjust(c,p.adj);
   full.width=0; full.height=0;
   const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",JPEG_Q)); c.width=0; c.height=0; return blob;
+}
+async function downloadPhotos(filled){
+  const b=$("photosBtn"); b.disabled=true; let n=0, ok=0;
+  for(const s of filled){ b.textContent=`Saving ${++n} of ${filled.length}…`; if(await download(SLOT_FILE[s]+".jpg",await renderCropFull(photos.get(slotMap[s])))) ok++ }
+  b.disabled=false; b.textContent="Save 9 photos";
+  if(ok) toast(`Saved ${ok} photo${ok>1?"s":""} as separate files (Front.jpg … Lower.jpg).`,5000);
 }
 async function savePhotos(){
   const filled=SLOT_ORDER.filter(s=>slotMap[s]); if(!filled.length) return;
   let dir=folder&&folder.dir;
   if(!dir){
-    if(!FS_OK){ for(const s of filled){ download(SLOT_FILE[s]+".jpg", await renderCropFull(photos.get(slotMap[s]))) } return }
-    try{ dir=await showDirectoryPicker({id:"pa-save",mode:"readwrite"}) }catch(e){ if(e.name!=="AbortError") toast("Couldn't open that folder: "+e.message); return }
+    const r=await pickFolder("pa-save"); if(r.cancelled) return;
+    if(r.fallback){ await downloadPhotos(filled); return }
+    dir=r.dir;
   }
   if(!(await ensurePerm(dir))){toast("Saving needs permission to edit that folder.",5000);return}
   // existing crops, matched by view name whatever their case or extension (Front.JPG, front.png ...)
@@ -877,39 +1197,29 @@ async function loadFromFolder(){
   await addFiles(files);
 }
 async function openPatientFolder(){
-  if(!FS_OK){toast("Opening folders needs Microsoft Edge or Google Chrome. You can still add photos and save them one by one.",6000);return}
-  let root; try{ root=await showDirectoryPicker({id:"pa-patient",mode:"readwrite"}) }catch(e){ if(e.name!=="AbortError") toast("Couldn't open that folder: "+e.message); return }
-  await openFolderHandle(root);
+  const r=await pickFolder("pa-patient"); if(r.cancelled) return;
+  if(r.fallback){ toast(FS_OK?"This view isn't allowed to open folders. Use Add photos instead; Save 9 photos then saves them as separate files.":"Opening folders needs Microsoft Edge or Google Chrome. Use Add photos instead.",8000); return }
+  await openFolderHandle(r.dir);
 }
 function resetBoard(){ for(const p of photos.values()) try{p.src.close()}catch(e){} photos.clear(); for(const s of SLOT_ORDER) slotMap[s]=null; ed.p=null }
 function closeFolder(){ folder=null; $("folderBox").hidden=true; resetBoard(); $("patient").value=""; renderAll() }
 
 $("pptxBtn").onclick=async()=>{
-  if(typeof PptxGenJS==="undefined"){toast("PowerPoint library didn't load. Check your connection and reload.");return}
+  if(typeof JSZip==="undefined"){toast("The PowerPoint tool didn't load. Check your connection and reload.");return}
   const b=$("pptxBtn"); b.disabled=true; b.textContent="Building…";
-  try{
-    const gap=+$("gapSel").value, L=computeLayout(gap), bg=$("bgSel").value;
-    const pp=new PptxGenJS(); pp.layout="LAYOUT_WIDE"; pp.title=headText();
-    const sl=pp.addSlide(); sl.background={color:bg};
-    for(const s of SLOT_ORDER){const p=photos.get(slotMap[s]); if(!p) continue; const r=L.rects[s];
-      sl.addImage({data:cropToJpeg(p,r.w,r.h),x:r.x,y:r.y,w:r.w,h:r.h,altText:`${SLOTS[s].group} ${SLOTS[s].label}`}); await new Promise(r=>setTimeout(r))}
-    if($("headSel").value==="1") sl.addText(headText(),{x:L.head.x,y:L.head.y,w:L.head.w,h:L.head.h,fontFace:"Arial",fontSize:16,bold:true,color:bg==="ffffff"?"111111":"FFFFFF",margin:0,valign:"middle"});
-    const blob=await pp.write({outputType:"blob"});
-    await saveFile(fileBase()+".pptx",blob);
-  }catch(e){console.error(e);toast("Couldn't build the PowerPoint: "+e.message,5000)}
+  try{ await saveFile(fileBase()+".pptx",await buildPptx()) }
+  catch(e){console.error(e);toast("Couldn't build the PowerPoint: "+e.message,6000)}
   b.disabled=false; b.textContent="Save PowerPoint";
 };
 $("jpgBtn").onclick=async()=>{
   const b=$("jpgBtn"); b.disabled=true; b.textContent="Building…";
   try{
-    const ppi=240, gap=+$("gapSel").value, L=computeLayout(gap), bg=$("bgSel").value;
+    const ppi=300, L=computeLayout();
     const c=document.createElement("canvas"); c.width=Math.round(SLIDE.w*ppi); c.height=Math.round(SLIDE.h*ppi);
-    const x=c.getContext("2d"); x.fillStyle="#"+bg; x.fillRect(0,0,c.width,c.height);
-    for(const s of SLOT_ORDER){const p=photos.get(slotMap[s]); if(!p) continue; const r=L.rects[s];
+    const x=c.getContext("2d"); x.fillStyle="#ffffff"; x.fillRect(0,0,c.width,c.height);
+    for(const s of SLOT_ORDER){const p=photos.get(slotMap[s]); const r=L.rects[s]; if(!p||!r) continue;
       const img=new Image(); img.src=cropToJpeg(p,r.w,r.h); await img.decode();
-      x.drawImage(img,r.x*ppi,r.y*ppi,r.w*ppi,r.h*ppi)}
-    if($("headSel").value==="1"){x.fillStyle=bg==="ffffff"?"#111":"#fff"; x.font=`600 ${0.22*ppi}px Arial, sans-serif`; x.textBaseline="middle";
-      x.fillText(headText(),L.head.x*ppi,(L.head.y+L.head.h*0.4)*ppi)}
+      x.drawImage(img,Math.round(r.x*ppi),Math.round(r.y*ppi),Math.round(r.w*ppi),Math.round(r.h*ppi))}
     const blob=await new Promise(r=>c.toBlob(r,"image/jpeg",0.92));
     await saveFile(fileBase()+".jpg",blob);
   }catch(e){console.error(e);toast("Couldn't build the JPG: "+e.message,5000)}
@@ -918,13 +1228,14 @@ $("jpgBtn").onclick=async()=>{
 
 /* ============ WIRING ============ */
 $("addBtn").onclick=()=>$("fileIn").click();
+$("photosBtn").onclick=savePhotos;
 $("fileIn").addEventListener("change",e=>{addFiles(e.target.files);e.target.value=""});
 const dz=$("dropzone");
 document.addEventListener("dragover",e=>{ if(e.dataTransfer.types.includes("Files")){e.preventDefault();dz.classList.add("over")} });
 document.addEventListener("dragleave",e=>{ if(!e.relatedTarget) dz.classList.remove("over") });
 document.addEventListener("drop",async e=>{ dz.classList.remove("over"); if(!(e.dataTransfer.files&&e.dataTransfer.files.length)) return; e.preventDefault();
   const items=[...e.dataTransfer.items], files=[...e.dataTransfer.files];
-  if(FS_OK && items.length===1 && items[0].getAsFileSystemHandle){       // a dropped folder opens as the patient folder
+  if(FS_OK && !folderBlocked && items.length===1 && items[0].getAsFileSystemHandle){       // a dropped folder opens as the patient folder
     const h=await items[0].getAsFileSystemHandle().catch(()=>null);
     if(h&&h.kind==="directory"){ await openFolderHandle(h); return }
   }
@@ -932,13 +1243,12 @@ document.addEventListener("drop",async e=>{ dz.classList.remove("over"); if(!(e.
 $("tray").addEventListener("dragover",e=>{if(e.dataTransfer.types.includes("text/pa-slot"))e.preventDefault()});
 $("tray").addEventListener("drop",e=>{const s=e.dataTransfer.getData("text/pa-slot"); if(!s)return; e.preventDefault(); e.stopPropagation();
   const p=photos.get(slotMap[s]); slotMap[s]=null; if(p){p.slot=null;p.locked=false;p.crop=null} renderAll()});
-for(const id of ["bgSel","gapSel","headSel"]) $(id).addEventListener("change",()=>{uiPrefs={bg:$("bgSel").value,gap:$("gapSel").value,head:$("headSel").value};store.set("pa.ui",uiPrefs);renderAll()});
 for(const id of ["patient","date"]) $(id).addEventListener("input",renderAll);
 $("clearBtn").onclick=()=>{ if(folder){closeFolder();return} resetBoard(); $("patient").value=""; renderAll() };
 $("folderBtn").onclick=openPatientFolder;
+if(!FS_OK) $("folderBtn").hidden=true;   // browsers without folder access (Firefox, Safari)
 $("folderClose").onclick=closeFolder;
 $("folderSub").addEventListener("change",async e=>{ folder.dir=folder.recs[+e.target.value]; await loadFromFolder() });
-$("photosBtn").onclick=savePhotos;
 
 /* ============ INSTALL + OFFLINE ============ */
 let installEvt=null;
@@ -947,7 +1257,7 @@ window.addEventListener("appinstalled",()=>{ installEvt=null; $("installBtn").hi
 $("installBtn").onclick=async()=>{ if(!installEvt) return; installEvt.prompt(); await installEvt.userChoice.catch(()=>{}); installEvt=null; $("installBtn").hidden=true };
 if("serviceWorker" in navigator && location.protocol!=="file:") navigator.serviceWorker.register("sw.js").catch(e=>console.warn("offline cache unavailable",e));
 
-buildBoard(); renderAll();
+buildBoard(); renderAll(); loadTemplate();
 loadModel();
 </script>
 </body>
