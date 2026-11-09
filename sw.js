@@ -1,5 +1,5 @@
 // PhotoAlign Collage offline cache. Bump VERSION whenever any file below changes.
-const VERSION = "pa-2026-11-09-4";
+const VERSION = "pa-2026-11-09-5";
 const SHELL = ["./", "index.html", "manifest.webmanifest",
   "vendor/ort.min.js", "vendor/ort-wasm-simd.wasm", "vendor/ort-wasm.wasm", "vendor/jszip.min.js", "template/patient-card.pptx",
   "model/dental_classifier.onnx", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png"];

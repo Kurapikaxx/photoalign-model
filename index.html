@@ -36,29 +36,31 @@
 img{max-width:100%}
 html,body{height:100%}
 body{margin:0;font-size:14px}
+body{margin:0}
 body{background:var(--bg);color:var(--ink);font-family:var(--font-ui);font-size:14px;line-height:1.45}
-.wrap{max-width:1280px;margin:0 auto;padding-block:16px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:14px}
-header.top{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 20px;justify-content:space-between}
-.brand h1{font-size:20px;font-weight:700;letter-spacing:-.01em;margin:0;text-wrap:balance}
-.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.wrap{box-sizing:border-box;max-width:1680px;height:100vh;height:100dvh;margin:0 auto;padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:10px}
+header.top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 20px;justify-content:space-between}
+header.top .legend{margin-left:auto}
+.brand h1{font-size:18px;font-weight:700;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.brand p{margin:1px 0 0;color:var(--muted);font-size:12.5px}
 .status{font-family:var(--font-mono);font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
 .dot.ok{background:var(--ok)}.dot.warn{background:var(--warn)}.dot.busy{background:var(--accent);animation:pulse 1s infinite}
 @keyframes pulse{50%{opacity:.3}}
 @media (prefers-reduced-motion:reduce){.dot.busy{animation:none}}
-.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:end;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.bar{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:end;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:8px 10px}
 .field{display:flex;flex-direction:column;gap:4px;min-width:0}
 .field label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
 input[type=text],input[type=date],select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:7px 9px;min-width:0}
-#patient{width:220px;max-width:100%}
+#patient{width:190px;max-width:100%}
 .spacer{flex:1 1 auto}
 button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:8px 12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 button:hover{border-color:var(--accent)}
 button:focus-visible,input:focus-visible,select:focus-visible,.slot:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 button:disabled{opacity:.45;cursor:not-allowed}
-.board-wrap{background:var(--well);border-radius:var(--r);padding:14px;position:relative;overflow-x:auto}
-.board{position:relative;margin:0 auto;user-select:none;aspect-ratio:16/9;width:min(100%,calc((100vh - 300px)*16/9));min-width:min(100%,560px);max-width:100%;background:#000;transition:background .2s}
+.board-wrap{background:var(--well);border-radius:var(--r);padding:10px;position:relative;min-height:0;container-type:size;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.board{position:relative;margin:0 auto;user-select:none;aspect-ratio:4/3;width:100%;max-width:100%;flex:none;background:#000;transition:background .2s}
 .slot{position:absolute;background:rgba(255,255,255,.06);outline:1px dashed rgba(255,255,255,.28);outline-offset:-1px;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .board.light .slot{background:rgba(0,0,0,.05);outline-color:rgba(0,0,0,.25)}
 .slot canvas{position:absolute;inset:0;width:100%;height:100%}
@@ -75,11 +77,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .toast{display:flex;align-items:center;gap:12px}
 .toast .toast-act{background:transparent;color:inherit;border:1px solid currentColor;padding:4px 10px;font-size:12.5px}
 .drop-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
-.dropzone{border:2px dashed var(--line);border-radius:var(--r);padding:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--panel)}
+.dropzone{border:2px dashed var(--line);border-radius:var(--r);padding:5px 12px;min-height:36px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--panel)}
 .dropzone.over{border-color:var(--accent);background:var(--accent-soft)}
-.dropzone .msg{color:var(--muted);flex:1 1 240px;min-width:0}
+.dropzone .msg{color:var(--muted);flex:1 1 240px;min-width:0;font-size:12.5px}
 .tray{display:flex;gap:8px;flex-wrap:wrap}
-.tray .ti{width:84px;height:64px;border-radius:6px;overflow:hidden;position:relative;border:1px solid var(--line);cursor:grab;background:#000}
+.tray .ti{width:64px;height:48px;border-radius:6px;overflow:hidden;position:relative;border:1px solid var(--line);cursor:grab;background:#000}
 .tray .ti canvas{width:100%;height:100%;display:block}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted)}
 .legend span{display:inline-flex;align-items:center;gap:6px}
@@ -94,18 +96,20 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .ed-top .sub{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
 .ed-main{display:flex;min-height:0}
 .ed-stage{position:relative;flex:1;min-width:0;min-height:0;background:#0a0b0e;touch-action:none}
-.workspace{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
-.adj-panel{position:sticky;top:12px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 24px);overflow:auto}
+.workspace{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:10px;align-items:stretch}
+.adj-panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;display:flex;flex-direction:column;gap:7px;min-height:0;overflow:auto}
 .adj-panel h2{margin:0;font-size:15px;font-weight:700}
 .adj-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .adj-sum{font-family:var(--font-mono);font-size:12px;color:var(--muted);text-align:right}
-.adj-pick{display:flex;flex-wrap:wrap;gap:6px}
-.adj-pick button{padding:4px 9px;font-size:12px;font-weight:500;border-radius:999px}
+.adj-pick{display:flex;flex-wrap:wrap;gap:5px}
+.adj-pick button{padding:3px 9px;font-size:12px;font-weight:500;border-radius:999px}
 .adj-panel.off #adjRows,.adj-panel.off .adj-btns,.adj-panel.off #edHist{opacity:.45}
-.adj-panel .hint{margin:0}
-.adj-panel h4{margin:6px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
-#adjRows{display:flex;flex-direction:column;gap:6px}
-@media (max-width:1000px){.workspace{grid-template-columns:minmax(0,1fr)}.adj-panel{position:static;max-height:none}}
+.adj-panel .hint{margin:0;font-size:11.5px}
+.adj-panel h4{margin:3px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+#adjRows{display:flex;flex-direction:column;gap:4px}
+.adj-col{display:flex;flex-direction:column;gap:7px;min-width:0}
+@media (min-width:1001px) and (min-height:601px){.workspace{grid-template-columns:minmax(0,1fr) 560px}.adj-panel{flex-direction:row;gap:18px}.adj-col{flex:1}#adjRows h4:first-child{margin-top:0}}
+@media (max-width:1000px),(max-height:600px){.wrap{height:auto}.workspace{grid-template-columns:minmax(0,1fr)}.board-wrap{container-type:normal}.board{width:100%!important}.adj-panel{overflow:visible}}
 .slot::after{content:"";position:absolute;inset:0;border:3px solid transparent;pointer-events:none;z-index:1}
 .slot.selected::after{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgba(255,255,255,.6)}
 .slot .crop{position:absolute;right:4px;bottom:4px;padding:3px 9px;border:0;border-radius:999px;background:rgba(0,0,0,.66);color:#fff;font-size:11.5px;font-weight:600;opacity:0;transition:opacity .12s;z-index:2}
@@ -118,14 +122,14 @@ button:disabled{opacity:.45;cursor:not-allowed}
 @media (hover:none){.slot .crop,.slot .mv{opacity:1}}
 .ed-panel{width:300px;flex:none;overflow:auto;background:var(--panel);border-left:1px solid var(--line);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 .ed-panel h4{margin:6px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
-.adj-row{display:grid;grid-template-columns:82px 1fr 46px;align-items:center;gap:8px;font-size:12.5px}
+.adj-row{display:grid;grid-template-columns:76px 1fr 44px;align-items:center;gap:8px;font-size:12px;min-height:20px}
 .adj-row label{cursor:pointer;user-select:none}
 .adj-row input[type=range]{width:100%;min-width:0;accent-color:var(--accent)}
 .adj-row output{font-family:var(--font-mono);font-size:11.5px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
 .adj-row.changed output{color:var(--ink)}
 .adj-btns{display:flex;gap:6px;flex-wrap:wrap}
-.adj-btns button{padding:6px 10px;font-size:12.5px}
-#edHist{width:100%;height:64px;background:var(--well);border-radius:4px;display:block}
+.adj-btns button{padding:4px 9px;font-size:12px}
+#edHist{width:100%;height:48px;flex:none;background:var(--well);border-radius:4px;display:block}
 .ed-panel .hint{margin:0}
 @media (max-width:760px){.ed-main{flex-direction:column}.ed-panel{width:auto;max-height:42vh;border-left:0;border-top:1px solid var(--line)}}
 .ed-stage canvas{position:absolute;inset:0;width:100%;height:100%;cursor:move}
@@ -133,8 +137,9 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .angle input{width:160px}
 .hint{font-size:12px;color:var(--muted)}
 @media (max-width:640px){#patient{width:100%}.angle input{width:110px}}
-.folder{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--bg);min-width:0}
+.folder{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:2px 4px 2px 10px;font-size:12.5px;border:1px solid var(--line);border-radius:6px;background:var(--bg);min-width:0}
 .folder b{font-weight:600}
+.folder select,.folder button{padding:4px 8px;font-size:12px}
 .folder .path{font-family:var(--font-mono);font-size:12px;color:var(--muted);overflow-wrap:anywhere;min-width:0}
 dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);padding:20px;max-width:min(460px,calc(100vw - 32px))}
 dialog::backdrop{background:rgba(0,0,0,.45)}
@@ -151,10 +156,18 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
       <h1>PhotoAlign Collage</h1>
       <p>Open a patient's folder. The photos get sorted, cropped and laid out, then saved back as Front, Front-Smile … Lower.</p>
     </div>
+    <div class="legend">
+      <span><i style="background:var(--ok)"></i>Confident match</span>
+      <span><i style="background:var(--warn)"></i>Check this one</span>
+      <span><i style="background:var(--muted)"></i>Placed by you or by file name</span>
+    </div>
     <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div class="status" id="status"><span class="dot busy" id="statusDot"></span><span id="statusText">Loading classifier…</span></div><button type="button" id="installBtn" hidden>Install app</button></div>
   </header>
 
   <div class="bar">
+    <button type="button" class="primary" id="folderBtn">Open patient folder</button>
+    <button type="button" id="addBtn">Add photos</button>
+    <input type="file" id="fileIn" accept="image/*" multiple hidden>
     <div class="field"><label for="patient">Patient</label><input type="text" id="patient" placeholder="Name or file number" autocomplete="off"></div>
     <div class="field"><label for="date">Date</label><input type="date" id="date"></div>
     <div class="spacer"></div>
@@ -165,10 +178,7 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
   </div>
 
   <div class="dropzone" id="dropzone">
-    <button type="button" class="primary" id="folderBtn">Open patient folder</button>
-    <button type="button" id="addBtn">Add photos</button>
-    <input type="file" id="fileIn" accept="image/*" multiple hidden>
-    <div class="msg" id="dzMsg">Or drop a patient folder or photos anywhere on this page. Click a photo to select it; drag inside it to reposition. Double-click for the full crop editor; drag ⇄ Swap onto another photo to swap them.</div>
+    <div class="msg" id="dzMsg">Drop a patient folder or photos anywhere on this page.</div>
     <div class="folder" id="folderBox" hidden>
       <span>Saving to <b id="folderName"></b></span>
       <select id="folderSub" aria-label="Records folder" hidden></select>
@@ -181,11 +191,12 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
   <div class="workspace">
     <div class="board-wrap"><div class="board" id="board"></div></div>
     <aside class="adj-panel off" id="adjPanel" aria-label="Photo adjustments">
+      <div class="adj-col">
       <div class="adj-top"><h2>Adjust</h2><span class="adj-sum" id="adjSummary">No photos selected</span></div>
       <div class="adj-pick" role="group" aria-label="Select photos">
         <button type="button" data-pick="all">All</button><button type="button" data-pick="io">Intra-orals</button><button type="button" data-pick="eo">Extra-orals</button><button type="button" data-pick="none">None</button>
       </div>
-      <p class="hint">Click a photo to select it; Ctrl- or Shift-click to add more. Drag inside a photo to reposition it; scroll on a selected photo to zoom.</p>
+      <p class="hint">Ctrl- or Shift-click to select several. Drag inside a photo to move it; scroll on a selected one to zoom.</p>
       <h4>Crop</h4>
       <div class="adj-row" id="adjrow_level"><label for="crop_level" title="Double-click to reset">Level</label><input type="range" id="crop_level" min="-15" max="15" step="0.1" value="0"><output id="cropv_level" for="crop_level">0.0°</output></div>
       <div class="adj-btns">
@@ -196,22 +207,17 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
         <button type="button" id="cropFlipV" title="Flip top–bottom">Flip ↕</button>
         <button type="button" id="cropAuto">Auto-crop</button>
       </div>
-      <canvas id="edHist" width="256" height="64" aria-label="Histogram of the selected photo"></canvas>
+      <canvas id="edHist" width="256" height="48" aria-label="Histogram of the selected photo"></canvas>
       <div class="adj-btns">
         <button type="button" id="adjAuto" title="Set white and black points for each selected photo">Auto</button>
         <button type="button" id="adjReset">Reset</button>
         <button type="button" id="adjCompare" title="Hold to see the photos without adjustments">Hold to compare</button>
       </div>
-      <div id="adjRows"></div>
-      <p class="hint">Double-click a slider to reset it. Adjustments go into every saved photo and collage.</p>
+      </div>
+      <div class="adj-col" id="adjRows"></div>
     </aside>
   </div>
 
-  <div class="legend">
-    <span><i style="background:var(--ok)"></i>Confident match</span>
-    <span><i style="background:var(--warn)"></i>Check this one</span>
-    <span><i style="background:var(--muted)"></i>Placed by you or by file name</span>
-  </div>
 </div>
 
 <div class="editor" id="editor" hidden>
@@ -717,7 +723,7 @@ function drawTile(s,sc){
 }
 function renderAll(){
   const bg="ffffff", L=computeLayout();
-  board.style.aspectRatio=`${SLIDE.w} / ${SLIDE.h}`; board.style.width=`min(100%, calc((100vh - 300px) * ${(SLIDE.w/SLIDE.h).toFixed(4)}))`;
+  board.style.aspectRatio=`${SLIDE.w} / ${SLIDE.h}`; board.style.width=`min(100cqw, calc(100cqh * ${(SLIDE.w/SLIDE.h).toFixed(4)}))`;
   board.style.background="#"+bg; board.classList.add("light");
   const bwpx=board.clientWidth, sc=bwpx/SLIDE.w;
   for(const s of SLOT_ORDER){
@@ -737,8 +743,8 @@ function renderAll(){
   const any=SLOT_ORDER.some(s=>slotMap[s]);
   $("pptxBtn").disabled=!any; $("jpgBtn").disabled=!any; $("photosBtn").disabled=!any;
   const n=SLOT_ORDER.filter(s=>slotMap[s]).length;
-  $("dzMsg").textContent = photos.size? `${n} of 9 slots filled. Click a photo to select it; drag inside it to reposition. Double-click for the full crop editor; drag ⇄ Swap onto another photo to swap them.` :
-    "Or drop a patient folder or photos anywhere on this page. Click a photo to select it; drag inside it to reposition. Double-click for the full crop editor; drag ⇄ Swap onto another photo to swap them.";
+  $("dzMsg").textContent = photos.size? `${n} of 9 filled. Click a photo to select it, drag inside it to move it, double-click for the full crop editor, drag ⇄ Swap to swap two photos.` :
+    "Drop a patient folder or photos anywhere on this page.";
 }
 function headText(){const n=$("patient").value.trim(), d=$("date").value;
   let ds=""; if(d){const [y,m,dd]=d.split("-");ds=`${dd}/${m}/${y}`} return [n||"Patient",ds].filter(Boolean).join("   ·   ")}
@@ -990,7 +996,7 @@ function buildAdjPanel(){
   for(const [k,label,mn,mx,st,g] of ADJ){
     if(g!==grp){ const h=document.createElement("h4"); h.textContent=g; host.appendChild(h); grp=g }
     const row=document.createElement("div"); row.className="adj-row"; row.id="adjrow_"+k;
-    row.innerHTML=`<label for="adj_${k}" title="Double-click to reset">${label}</label><input type="range" id="adj_${k}" min="${mn}" max="${mx}" step="${st}" value="0"><output id="adjv_${k}" for="adj_${k}">0</output>`;
+    row.innerHTML=`<label for="adj_${k}" title="Double-click to reset. Applies to every saved photo and collage.">${label}</label><input type="range" id="adj_${k}" min="${mn}" max="${mx}" step="${st}" value="0"><output id="adjv_${k}" for="adj_${k}">0</output>`;
     host.appendChild(row);
     const inp=row.querySelector("input");
     inp.addEventListener("input",()=>setAdj(k,+inp.value));
