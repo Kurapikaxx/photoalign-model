@@ -96,7 +96,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .ed-top .sub{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
 .ed-main{display:flex;min-height:0}
 .ed-stage{position:relative;flex:1;min-width:0;min-height:0;background:#0a0b0e;touch-action:none}
-.workspace{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:10px;align-items:stretch}
+.workspace{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:10px;align-items:stretch}
+.workspace.two{grid-template-columns:minmax(0,1fr) 560px}
 .adj-panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;display:flex;flex-direction:column;gap:7px;min-height:0;overflow:auto}
 .adj-panel h2{margin:0;font-size:15px;font-weight:700}
 .adj-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
@@ -108,7 +109,15 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .adj-panel h4{margin:3px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
 #adjRows{display:flex;flex-direction:column;gap:4px}
 .adj-col{display:flex;flex-direction:column;gap:7px;min-width:0}
-@media (min-width:1001px) and (min-height:601px){.workspace{grid-template-columns:minmax(0,1fr) 560px}.adj-panel{flex-direction:row;gap:18px}.adj-col{flex:1}#adjRows h4:first-child{margin-top:0}}
+/* the panel fills its full height: the histogram takes spare space, slider rows spread evenly */
+.adj-col{flex:1 1 auto}
+#adjRows{justify-content:space-between}
+#adjRows h4:first-child{margin-top:0}
+.workspace.two .adj-panel{flex-direction:row;gap:18px}
+.workspace.two .adj-col{flex:1 1 0}
+.adj-panel.measuring #edHist{flex:none!important;height:48px!important}
+.adj-panel.measuring .adj-col{flex:none!important}
+.adj-panel.measuring #adjRows{justify-content:flex-start}
 @media (max-width:1000px),(max-height:600px){.wrap{height:auto}.workspace{grid-template-columns:minmax(0,1fr)}.board-wrap{container-type:normal}.board{width:100%!important}.adj-panel{overflow:visible}}
 .slot::after{content:"";position:absolute;inset:0;border:3px solid transparent;pointer-events:none;z-index:1}
 .slot.selected::after{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgba(255,255,255,.6)}
@@ -129,7 +138,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .adj-row.changed output{color:var(--ink)}
 .adj-btns{display:flex;gap:6px;flex-wrap:wrap}
 .adj-btns button{padding:4px 9px;font-size:12px}
-#edHist{width:100%;height:48px;flex:none;background:var(--well);border-radius:4px;display:block}
+#edHist{width:100%;height:48px;flex:1 1 48px;min-height:48px;max-height:240px;background:var(--well);border-radius:4px;display:block}
 .ed-panel .hint{margin:0}
 @media (max-width:760px){.ed-main{flex-direction:column}.ed-panel{width:auto;max-height:42vh;border-left:0;border-top:1px solid var(--line)}}
 .ed-stage canvas{position:absolute;inset:0;width:100%;height:100%;cursor:move}
@@ -975,6 +984,17 @@ function editorSource(p){
   c.width=Math.round(base.width*sc); c.height=Math.round(base.height*sc); c.getContext("2d",{willReadFrequently:true}).drawImage(base,0,0,c.width,c.height);
   applyAdjust(c,p.adj); p.adjCache=c; p.adjCacheKey=key; return c;
 }
+// One column when everything fits the panel's height, two columns otherwise
+function fitPanel(){
+  const ws=document.querySelector(".workspace"), pn=$("adjPanel"), was=ws.classList.contains("two");
+  if(matchMedia("(max-width:1000px),(max-height:600px)").matches){ ws.classList.remove("two") }
+  else{ ws.classList.remove("two"); pn.classList.add("measuring"); const fits=pn.scrollHeight<=pn.clientHeight+1; pn.classList.remove("measuring"); ws.classList.toggle("two",!fits) }
+  sizeHist(); return was!==ws.classList.contains("two");
+}
+function sizeHist(){
+  const c=$("edHist"), r=c.getBoundingClientRect(), dpr=window.devicePixelRatio||1, w=Math.round(r.width*dpr), h=Math.round(r.height*dpr);
+  if(w&&h&&(c.width!==w||c.height!==h)){ c.width=w; c.height=h; drawHist() }
+}
 function drawHist(){
   const hc=$("edHist"), hx=hc.getContext("2d"), HW=hc.width, HH=hc.height; hx.clearRect(0,0,HW,HH);
   const p=photos.get(primary); if(!p||!p.crop) return;
@@ -1106,7 +1126,8 @@ document.addEventListener("keydown",e=>{
   else if(e.key==="+"||e.key==="="){c.w*=0.96;c.h*=0.96;clampCrop(ed.p);drawEditor()}
   else if(e.key==="-"){c.w/=0.96;c.h/=0.96;clampCrop(ed.p);drawEditor()}
 });
-window.addEventListener("resize",()=>{renderAll(); if(!$("editor").hidden) drawEditor()});
+window.addEventListener("resize",()=>{fitPanel(); renderAll(); if(!$("editor").hidden) drawEditor()});
+new ResizeObserver(()=>{ if(fitPanel()) renderAll() }).observe(document.querySelector(".workspace"));
 
 /* ============ EXPORT ============ */
 function fileBase(){const n=($("patient").value.trim()||"Patient").replace(/[\\/:*?"<>|]+/g,"").replace(/\s+/g,"_");return `${n}_${$("date").value||"photos"}`}
@@ -1320,7 +1341,7 @@ window.addEventListener("appinstalled",()=>{ installEvt=null; $("installBtn").hi
 $("installBtn").onclick=async()=>{ if(!installEvt) return; installEvt.prompt(); await installEvt.userChoice.catch(()=>{}); installEvt=null; $("installBtn").hidden=true };
 if("serviceWorker" in navigator && location.protocol!=="file:") navigator.serviceWorker.register("sw.js").catch(e=>console.warn("offline cache unavailable",e));
 
-buildBoard(); renderAll(); loadTemplate();
+buildBoard(); fitPanel(); renderAll(); loadTemplate();
 loadModel();
 </script>
 </body>
